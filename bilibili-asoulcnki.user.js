@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili asoulcnki
 // @namespace    https://github.com/sparanoid
-// @version      0.1.1
+// @version      0.1.2
 // @description  枝网查重 bilibili 版
 // @author       Sparanoid
 // @match        https://*.bilibili.com/*
@@ -14,7 +14,7 @@ window.addEventListener('load', () => {
   console.log('bilibili asoulcnki loaded');
 
   const apiBase = 'https://asoulcnki.asia';
-  const feedbackUrl = 'https://space.bilibili.com/2763';
+  const feedbackUrl = 'https://t.bilibili.com/545085157213602473';
 
   async function fetchResult(url = '', data = {}) {
     const response = await fetch(url, {
@@ -200,7 +200,9 @@ window.addEventListener('load', () => {
             observeComments(item);
 
             // Stop observing
-            wrapperObserver.disconnect();
+            // TODO: when observer stops it won't work for dynamic homepage ie. https://space.bilibili.com/703007996/dynamic
+            // so disable it here. This may have some performance impact on low-end machines.
+            // wrapperObserver.disconnect();
           }
         })
       }
