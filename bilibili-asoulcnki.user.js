@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili asoulcnki
 // @namespace    https://github.com/sparanoid
-// @version      0.1.0
+// @version      0.1.1
 // @description  枝网查重 bilibili 版
 // @author       Sparanoid
 // @match        https://*.bilibili.com/*
