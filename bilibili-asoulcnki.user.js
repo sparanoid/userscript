@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         bilibili asoulcnki
 // @namespace    https://github.com/sparanoid
-// @version      0.1.2
+// @version      0.1.3
 // @description  枝网查重 bilibili 版
 // @author       Sparanoid
 // @match        https://*.bilibili.com/*
-// @icon         https://external-content.duckduckgo.com/ip3/www.bilibili.com.ico
+// @icon         https://experiments.sparanoid.net/favicons/v2/www.bilibili.com.ico
 // @grant        none
 // @run-at       document-start
 // ==/UserScript==
@@ -33,7 +33,7 @@ window.addEventListener('load', () => {
   }
 
   function rateColor(percent) {
-    return `hsl(${100 - percent}, 70%, 50%)`;
+    return `hsl(${100 - percent}, 70%, 45%)`;
   }
 
   function attachEl(item) {
@@ -44,7 +44,7 @@ window.addEventListener('load', () => {
     let content = item.querySelector('.con .text') || item.querySelector('.reply-con .text-con');
     let id = item.dataset.id;
 
-    // simple way to attach element on replies initially loaded with comment
+    // Simple way to attach element on replies initially loaded with comment
     // which wouldn't trigger mutation inside observeComments
     let replies = item.querySelectorAll('.con .reply-box .reply-item');
     if (replies.length > 0) {
@@ -60,7 +60,7 @@ window.addEventListener('load', () => {
       let asoulcnkiEl = document.createElement('span');
 
       asoulcnkiEl.classList.add('asoulcnki', 'btn-hover', 'btn-highlight');
-      asoulcnkiEl.innerHTML = '狠狠的查';
+      asoulcnkiEl.innerHTML = '狠狠地查';
       asoulcnkiEl.addEventListener('click', e => {
         // Need regex to stripe `回复 @username  :`
         let contentProcessed = content.innerText.replace(/回复 @.*:/, '');
@@ -83,28 +83,27 @@ window.addEventListener('load', () => {
             let rate = result.rate * 100;
             let relatedItems = result.related;
 
+            resultContent = `<a href="${apiBase}" target="_blank">枝网</a>文本复制检测报告（Chrome 脚本版/<a href="${feedbackUrl}" target="_blank">反馈</a>）
+查重时间：${formatDate(Date.now())}
+数据范围：${formatDate(startTime)} - ${formatDate(endTime)}
+总文字复制比：<b style="color: ${rateColor(rate)}">${rate.toFixed(1)}%</b>\n`;
+
             if (relatedItems.length === 0) {
-              resultContent = `<a href="${apiBase}" target="_blank">枝网</a>文本复制检测报告（Chrome 脚本版/<a href="${feedbackUrl}" target="_blank">反馈</a>）
-查重时间：${formatDate(Date.now())}
-数据范围：${formatDate(startTime)} - ${formatDate(endTime)}
-总文字复制比：<b style="color: ${rateColor(rate)}">${rate}%</b>
-结果：一眼原创，再偷必究（查重结果仅作娱乐参考）`;
+              resultContent += `一眼原创，再偷必究（查重结果仅作娱乐参考）`;
             } else {
-              let fisrtRelatedItem = relatedItems[0];
-              console.log('rpid', fisrtRelatedItem[1].rpid);
-              console.log('id', id);
-              let selfOriginal = +fisrtRelatedItem[1].rpid === +id ? `（<span style="color: blue;">本文原创，已收录</span>）` : '';
+              let selfOriginal = +relatedItems[0][1].rpid === +id ? `（<span style="color: blue;">本文原创，已收录</span>）` : '';
 
-              resultContent = `<a href="${apiBase}" target="_blank">枝网</a>文本复制检测报告（Chrome 脚本版/<a href="${feedbackUrl}" target="_blank">反馈</a>）
-查重时间：${formatDate(Date.now())}
-数据范围：${formatDate(startTime)} - ${formatDate(endTime)}
-总文字复制比：<b style="color: ${rateColor(rate)}">${rate}%</b>
-重复次数：${relatedItems.length}${selfOriginal}
-相似小作文：<a href="${fisrtRelatedItem[2].trim()}" title="${fisrtRelatedItem[1].content}" target="_blank">${fisrtRelatedItem[2].trim()}</a>
-作者：${fisrtRelatedItem[1].m_name}（UID <a href="https://space.bilibili.com/${fisrtRelatedItem[1].mid}" target="_blank">${fisrtRelatedItem[1].mid}</a>）
-发表时间：${formatDate(fisrtRelatedItem[1].ctime)}
+              resultContent += `重复次数：${relatedItems.length}${selfOriginal}\n`;
 
-查重结果仅作娱乐参考，请注意辨别是否为原创`;
+              relatedItems.map((item, idx) => {
+                let rate = item[0] * 100;
+
+                resultContent += `#${idx + 1} <span style="color: ${rateColor(rate)}">${rate.toFixed(1)}%</span> <a href="${item[2].trim()}" title="${item[1].content}" target="_blank">${item[2].trim()}</a>
+发布于：${formatDate(item[1].ctime)}
+作者：@${item[1].m_name} (UID <a href="https://space.bilibili.com/${item[1].mid}" target="_blank">${item[1].mid}</a>)\n\n`;
+              });
+
+              resultContent += `查重结果仅作娱乐参考，请注意辨别是否为原创`;
             }
           }
 
@@ -116,8 +115,13 @@ window.addEventListener('load', () => {
           resultWrap.style.background = 'hsla(0, 0%, 50%, .1)';
           resultWrap.style.borderRadius = '4px';
           resultWrap.style.whiteSpace = 'pre';
+          resultWrap.classList.add('asoulcnki-result');
           resultWrap.innerHTML = resultContent;
 
+          // Remove previous result if exists
+          if (injectWrap.querySelector('.asoulcnki-result')) {
+            injectWrap.querySelector('.asoulcnki-result').remove();
+          }
           injectWrap.append(resultWrap);
         });
       }, false);
@@ -148,9 +152,9 @@ window.addEventListener('load', () => {
         // Directly attach elements for pure static server side rendered comments
         // and replies list. Used by zhuanlan posts with reply hash in URL.
         // TODO: need a better solution
-        //[...commentList.querySelectorAll('.list-item, .reply-item')].map(item => {
-        //  attachEl(item);
-        //});
+        [...commentList.querySelectorAll('.list-item, .reply-item')].map(item => {
+          attachEl(item);
+        });
 
         const observer = new MutationObserver((mutationsList, observer) => {
 
