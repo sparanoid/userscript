@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name         bilibili asoulcnki
-// @namespace    https://github.com/sparanoid
-// @version      0.1.3
+// @namespace    https://github.com/sparanoid/userscript
+// @supportURL   https://github.com/sparanoid/userscript/issues
+// @version      0.1.4
 // @description  枝网查重 bilibili 版
 // @author       Sparanoid
 // @match        https://*.bilibili.com/*
@@ -62,9 +63,25 @@ window.addEventListener('load', () => {
       asoulcnkiEl.classList.add('asoulcnki', 'btn-hover', 'btn-highlight');
       asoulcnkiEl.innerHTML = '狠狠地查';
       asoulcnkiEl.addEventListener('click', e => {
+        let contentPrepared = '';
+
+        // Copy meme icons alt text
+        for (let node of content.childNodes.values()) {
+          if (node.nodeType === 3) {
+            contentPrepared += node.textContent;
+          } else if (node.nodeName === 'IMG' && node.nodeType === 1) {
+            contentPrepared += node.alt;
+          } else {
+            contentPrepared += node.innerText;
+          }
+        }
+
         // Need regex to stripe `回复 @username  :`
-        let contentProcessed = content.innerText.replace(/回复 @.*:/, '');
+        let contentProcessed = contentPrepared.replace(/回复 @.*:/, '');
         console.log('content processed', contentProcessed);
+
+        // ask to confirm if words count not enough
+        if (contentProcessed.length < 10 && !confirm('内容过短（少于 10 字），可能无法得到正确结果，是否继续查询？')) return;
 
         fetchResult(`${apiBase}/v1/api/check`, {
           text: contentProcessed
