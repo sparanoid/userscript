@@ -2,7 +2,7 @@
 // @name         bilibili asoulcnki
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.4
+// @version      0.1.5
 // @description  枝网查重 bilibili 版
 // @author       Sparanoid
 // @match        https://*.bilibili.com/*
@@ -37,6 +37,10 @@ window.addEventListener('load', () => {
     return `hsl(${100 - percent}, 70%, 45%)`;
   }
 
+  function percentDisplay(num) {
+    return num.toFixed(2).replace('.00', '');
+  }
+
   function attachEl(item) {
     let injectWrap = item.querySelector('.con .info');
 
@@ -63,6 +67,7 @@ window.addEventListener('load', () => {
       asoulcnkiEl.classList.add('asoulcnki', 'btn-hover', 'btn-highlight');
       asoulcnkiEl.innerHTML = '狠狠地查';
       asoulcnkiEl.addEventListener('click', e => {
+        console.log(content.childNodes);
         let contentPrepared = '';
 
         // Copy meme icons alt text
@@ -71,6 +76,10 @@ window.addEventListener('load', () => {
             contentPrepared += node.textContent;
           } else if (node.nodeName === 'IMG' && node.nodeType === 1) {
             contentPrepared += node.alt;
+          } else if (node.nodeName === 'BR' && node.nodeType === 1) {
+            contentPrepared += '\n';
+          } else if (node.nodeName === 'A' && node.nodeType === 1 && node.classList.contains('comment-jump-url')) {
+            contentPrepared += node.href.replace(/https?:\/\/www\.bilibili\.com\/video\//, '');
           } else {
             contentPrepared += node.innerText;
           }
@@ -103,7 +112,7 @@ window.addEventListener('load', () => {
             resultContent = `<a href="${apiBase}" target="_blank">枝网</a>文本复制检测报告（Chrome 脚本版/<a href="${feedbackUrl}" target="_blank">反馈</a>）
 查重时间：${formatDate(Date.now())}
 数据范围：${formatDate(startTime)} - ${formatDate(endTime)}
-总文字复制比：<b style="color: ${rateColor(rate)}">${rate.toFixed(1)}%</b>\n`;
+总文字复制比：<b style="color: ${rateColor(rate)}">${percentDisplay(rate)}%</b>\n`;
 
             if (relatedItems.length === 0) {
               resultContent += `一眼原创，再偷必究（查重结果仅作娱乐参考）`;
@@ -115,7 +124,7 @@ window.addEventListener('load', () => {
               relatedItems.map((item, idx) => {
                 let rate = item[0] * 100;
 
-                resultContent += `#${idx + 1} <span style="color: ${rateColor(rate)}">${rate.toFixed(1)}%</span> <a href="${item[2].trim()}" title="${item[1].content}" target="_blank">${item[2].trim()}</a>
+                resultContent += `#${idx + 1} <span style="color: ${rateColor(rate)}">${percentDisplay(rate)}%</span> <a href="${item[2].trim()}" title="${item[1].content}" target="_blank">${item[2].trim()}</a>
 发布于：${formatDate(item[1].ctime)}
 作者：@${item[1].m_name} (UID <a href="https://space.bilibili.com/${item[1].mid}" target="_blank">${item[1].mid}</a>)\n\n`;
               });
