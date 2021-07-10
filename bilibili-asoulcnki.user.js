@@ -67,7 +67,6 @@ window.addEventListener('load', () => {
       asoulcnkiEl.classList.add('asoulcnki', 'btn-hover', 'btn-highlight');
       asoulcnkiEl.innerHTML = '狠狠地查';
       asoulcnkiEl.addEventListener('click', e => {
-        console.log(content.childNodes);
         let contentPrepared = '';
 
         // Copy meme icons alt text
