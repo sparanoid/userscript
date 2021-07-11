@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         bilibili asoulcnki
+// @name         枝网查重 API 版
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.5
-// @description  枝网查重 bilibili 版
+// @version      0.1.6
+// @description  bilibili 枝网（asoulcnki）查重 API 版
 // @author       Sparanoid
 // @match        https://*.bilibili.com/*
 // @icon         https://experiments.sparanoid.net/favicons/v2/www.bilibili.com.ico
@@ -12,10 +12,12 @@
 // ==/UserScript==
 
 window.addEventListener('load', () => {
-  console.log('bilibili asoulcnki loaded');
-
+  const DEBUG = true;
+  const NAMESPACE = 'bilibili-asoulcnki';
   const apiBase = 'https://asoulcnki.asia';
   const feedbackUrl = 'https://t.bilibili.com/545085157213602473';
+
+  console.log(`${NAMESPACE} loaded`);
 
   async function fetchResult(url = '', data = {}) {
     const response = await fetch(url, {
@@ -26,6 +28,12 @@ window.addEventListener('load', () => {
       body: JSON.stringify(data)
     });
     return response.json();
+  }
+
+  function debug(description = '', msg = '', force = false) {
+    if (DEBUG || force) {
+      console.log(`${NAMESPACE}: ${description}`, msg)
+    }
   }
 
   function formatDate(timestamp) {
@@ -59,7 +67,7 @@ window.addEventListener('load', () => {
     }
 
     if (injectWrap.querySelector('.asoulcnki')) {
-      console.log('asoulcnki already loaded for this comment');
+      debug('already loaded for this comment');
     } else {
       // Insert asoulcnki check button
       let asoulcnkiEl = document.createElement('span');
@@ -86,7 +94,7 @@ window.addEventListener('load', () => {
 
         // Need regex to stripe `回复 @username  :`
         let contentProcessed = contentPrepared.replace(/回复 @.*:/, '');
-        console.log('content processed', contentProcessed);
+        debug('content processed', contentProcessed);
 
         // ask to confirm if words count not enough
         if (contentProcessed.length < 10 && !confirm('内容过短（少于 10 字），可能无法得到正确结果，是否继续查询？')) return;
@@ -95,7 +103,7 @@ window.addEventListener('load', () => {
           text: contentProcessed
         })
         .then(data => {
-          console.log(data);
+          debug('data returned', data);
 
           let resultContent = '';
 
@@ -187,7 +195,7 @@ window.addEventListener('load', () => {
 
             if (mutation.type === 'childList') {
 
-              console.log('observed mutations', [...mutation.addedNodes].length);
+              debug('observed mutations', [...mutation.addedNodes].length);
 
               [...mutation.addedNodes].map(item => {
                 attachEl(item);
@@ -199,7 +207,7 @@ window.addEventListener('load', () => {
 
                 if (replies.length > 0) {
                   observeComments(item)
-                  console.log(item.dataset.id + ' has rendered reply(ies)', replies.length);
+                  debug(item.dataset.id + ' has rendered reply(ies)', replies.length);
                 }
               })
             }
@@ -221,10 +229,10 @@ window.addEventListener('load', () => {
       if (mutation.type === 'childList') {
 
         [...mutation.addedNodes].map(item => {
-          console.log('mutation element added', item);
+          debug('mutation wrapper added', item);
 
           if (item.classList?.contains('bb-comment')) {
-            console.log('mutation element added (found target)', item);
+            debug('mutation wrapper added (found target)', item);
 
             observeComments(item);
 
