@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         枝网查重 API 版
+// @name         bilibili 枝网查重 API 版
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
 // @version      0.1.6
