@@ -2,8 +2,8 @@
 // @name         bilibili 成分查询
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.5
-// @description  bilibili 共同关注一键查询（自主查询版）
+// @version      0.1.6
+// @description  bilibili 共同关注一键查询（本地查询版）
 // @author       Sparanoid
 // @match        https://*.bilibili.com/*
 // @icon         https://experiments.sparanoid.net/favicons/v2/www.bilibili.com.ico
@@ -108,13 +108,24 @@ ${name}
     });
   }
 
-  function observeCard(wrapper) {
+  function processCard(wrapper) {
     let iteration = 1;
     let resultContent = '';
-    let id = wrapper.querySelector('.face')?.href.match(/\/\/space\.bilibili\.com\/(\d+)/)[1];
+    let idEl = wrapper.querySelector('.face') || wrapper.querySelector('.idc-avatar-container');
+    let id = '';
+    let wrapPadding = '0px';
+
+    // following/follower list
+    if (wrapper.querySelector('.idc-avatar-container')) {
+      wrapPadding = '1rem'
+    }
+
+    if (idEl) {
+      id = idEl.href.match(/\/\/space\.bilibili\.com\/(\d+)/)[1];
+    }
 
     // ensure user id exists
-    debug('wrapper', wrapper.querySelector('.face'));
+    debug('passed wrapper', wrapper);
     debug('current uid', id);
 
     if (id) {
@@ -125,6 +136,7 @@ ${name}
       contentWrap.classList.add(`${NAMESPACE}-wrap`);
       contentWrap.style.overflowY = 'auto';
       contentWrap.style.maxHeight = '300px';
+      contentWrap.style.padding = wrapPadding;
       contentWrap.style.paddingTop = '.5rem';
       contentWrap.style.marginTop = '1rem';
       contentWrap.style.borderTop = '1px solid #eee';
@@ -134,7 +146,7 @@ ${name}
       banner.style.marginBottom = '.5rem';
       banner.style.borderBottom = '1px solid #eee';
       banner.style.whiteSpace = 'pre';
-      banner.innerHTML = `成分查询（<a href="${feedbackUrl}" target="_blank">问题反馈</a>）\n查询时间：${formatDate(Date.now())} <button>刷新查询</button>`;
+      banner.innerHTML = `成分查询-本地查询版（<a href="${feedbackUrl}" target="_blank">问题反馈</a>）\n查询时间：${formatDate(Date.now())}`;
       contentWrap.append(banner);
 
       // Inject prepared wrapper
@@ -157,7 +169,17 @@ ${name}
           // normal card, global, comments avatar, comment mentions, and etc.
           if (item.classList?.contains('user-card')) {
             debug('mutation wrapper added (found target)', item);
-            observeCard(item);
+            processCard(item);
+          }
+
+          // following/follower list
+          if (item.classList?.contains('idc-info')) {
+            let parent = item.parentNode;
+
+            if (parent.getAttribute('id') === 'id-card') {
+              debug('mutation id wrapper added (found target)', item);
+              processCard(parent);
+            }
           }
 
           // card in dongtai mentions
@@ -166,7 +188,7 @@ ${name}
 
             if (parent.classList?.contains('userinfo-content')) {
               debug('mutation face item added (found target)', item);
-              observeCard(parent);
+              processCard(parent);
             }
           }
         })
