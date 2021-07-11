@@ -2,7 +2,7 @@
 // @name         bilibili 成分查询
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.4
+// @version      0.1.5
 // @description  bilibili 共同关注一键查询（自主查询版）
 // @author       Sparanoid
 // @match        https://*.bilibili.com/*
@@ -98,7 +98,7 @@ ${name}
 
           setTimeout(() => {
             processFollowings(wrapper, id, output, iteration + 1);
-          }, 200);
+          }, 400 + Math.floor(Math.random() * 600));
         } else {
           debug('loop finished');
         }
@@ -134,7 +134,7 @@ ${name}
       banner.style.marginBottom = '.5rem';
       banner.style.borderBottom = '1px solid #eee';
       banner.style.whiteSpace = 'pre';
-      banner.innerHTML = `成分查询（<a href="${feedbackUrl}" target="_blank">问题反馈</a>）\n查询时间：${formatDate(Date.now())} <button>刷新查询</button>\n哇哇哇，查大成分了💃💃💃💃happy`;
+      banner.innerHTML = `成分查询（<a href="${feedbackUrl}" target="_blank">问题反馈</a>）\n查询时间：${formatDate(Date.now())} <button>刷新查询</button>`;
       contentWrap.append(banner);
 
       // Inject prepared wrapper
