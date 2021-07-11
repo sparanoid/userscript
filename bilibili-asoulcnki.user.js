@@ -2,7 +2,7 @@
 // @name         bilibili 枝网查重 API 版
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.6
+// @version      0.1.7
 // @description  bilibili 枝网（asoulcnki.asia）查重 API 版
 // @author       Sparanoid
 // @match        https://*.bilibili.com/*
@@ -116,7 +116,7 @@ window.addEventListener('load', () => {
             let rate = result.rate * 100;
             let relatedItems = result.related;
 
-            resultContent = `<a href="${apiBase}" target="_blank">枝网</a>文本复制检测报告（Chrome 脚本版/<a href="${feedbackUrl}" target="_blank">反馈</a>）
+            resultContent = `<a href="${apiBase}" target="_blank">枝网</a>文本复制检测报告（油猴一键版 ${feedbackUrl}）
 查重时间：${formatDate(Date.now())}
 数据范围：${formatDate(startTime)} - ${formatDate(endTime)}
 总文字复制比：<b style="color: ${rateColor(rate)}">${percentDisplay(rate)}%</b>\n`;
