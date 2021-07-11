@@ -2,7 +2,7 @@
 // @name         bilibili 枝网查重 API 版
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.7
+// @version      0.1.8
 // @description  bilibili 枝网（asoulcnki.asia）查重 API 版
 // @author       Sparanoid
 // @match        https://*.bilibili.com/*
@@ -133,7 +133,7 @@ window.addEventListener('load', () => {
 
                 resultContent += `#${idx + 1} <span style="color: ${rateColor(rate)}">${percentDisplay(rate)}%</span> <a href="${item[2].trim()}" title="${item[1].content}" target="_blank">${item[2].trim()}</a>
 发布于：${formatDate(item[1].ctime)}
-作者：@${item[1].m_name} (UID <a href="https://space.bilibili.com/${item[1].mid}" target="_blank">${item[1].mid}</a>)\n\n`;
+作者：${item[1].m_name} (UID <a href="https://space.bilibili.com/${item[1].mid}" target="_blank">${item[1].mid}</a>)\n\n`;
               });
 
               resultContent += `查重结果仅作娱乐参考，请注意辨别是否为原创`;
