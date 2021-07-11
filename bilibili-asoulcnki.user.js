@@ -3,7 +3,7 @@
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
 // @version      0.1.6
-// @description  bilibili 枝网（asoulcnki）查重 API 版
+// @description  bilibili 枝网（asoulcnki.asia）查重 API 版
 // @author       Sparanoid
 // @match        https://*.bilibili.com/*
 // @icon         https://experiments.sparanoid.net/favicons/v2/www.bilibili.com.ico
