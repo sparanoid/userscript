@@ -2,9 +2,14 @@
 // @name         bilibili 枝网查重 API 版
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.8
+// @version      0.1.9
 // @description  bilibili 枝网（asoulcnki.asia）查重 API 版
 // @author       Sparanoid
+// @license      AGPL
+// @compatible   chrome 80 or later
+// @compatible   edge 80 or later
+// @compatible   firefox 74 or later
+// @compatible   safari 13.1 or later
 // @match        https://*.bilibili.com/*
 // @icon         https://experiments.sparanoid.net/favicons/v2/www.bilibili.com.ico
 // @grant        none
@@ -47,6 +52,19 @@ window.addEventListener('load', () => {
 
   function percentDisplay(num) {
     return num.toFixed(2).replace('.00', '');
+  }
+
+  function sanitize(string) {
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#x27;',
+      "/": '&#x2F;',
+    };
+    const reg = /[&<>"'/]/ig;
+    return string.replace(reg, match => map[match]);
   }
 
   function attachEl(item) {
@@ -108,7 +126,7 @@ window.addEventListener('load', () => {
           let resultContent = '';
 
           if (data.code !== 0) {
-            resultContent = `返回结果错误，可能是文本内容过短，或请访问 <a href="${apiBase}/" target="_blank">枝网</a> 查看服务是否正常`;
+            resultContent = `返回结果错误，可能是文本内容过短，或请访问 <a href="${apiBase}/" target="_blank">枝网</a> 查看服务是否正常\n枝网返回结果参考：${data?.status || ''} ${data?.error || ''}`;
           } else {
             let result = data.data;
             let startTime = result.start_time;
@@ -131,7 +149,7 @@ window.addEventListener('load', () => {
               relatedItems.map((item, idx) => {
                 let rate = item[0] * 100;
 
-                resultContent += `#${idx + 1} <span style="color: ${rateColor(rate)}">${percentDisplay(rate)}%</span> <a href="${item[2].trim()}" title="${item[1].content}" target="_blank">${item[2].trim()}</a>
+                resultContent += `#${idx + 1} <span style="color: ${rateColor(rate)}">${percentDisplay(rate)}%</span> <a href="${item[2].trim()}" title="${sanitize(item[1].content)}" target="_blank">${item[2].trim()}</a>
 发布于：${formatDate(item[1].ctime)}
 作者：${item[1].m_name} (UID <a href="https://space.bilibili.com/${item[1].mid}" target="_blank">${item[1].mid}</a>)\n\n`;
               });
@@ -156,6 +174,10 @@ window.addEventListener('load', () => {
             injectWrap.querySelector('.asoulcnki-result').remove();
           }
           injectWrap.append(resultWrap);
+        })
+        .catch(error => {
+          alert(`枝网后端出错，请检查网络，报错信息：${error}`);
+          debug('fetch error', error);
         });
       }, false);
 
