@@ -2,7 +2,7 @@
 // @name         bilibili 成分查询
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.7
+// @version      0.1.8
 // @description  bilibili 共同关注一键查询（本地查询版）
 // @author       Sparanoid
 // @license      AGPL
@@ -50,6 +50,23 @@ window.addEventListener('load', () => {
     return num.toFixed(2).replace('.00', '');
   }
 
+  function sanitize(string) {
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#x27;',
+      "/": '&#x2F;',
+    };
+    const reg = /[&<>"'/]/ig;
+    return string.replace(reg, match => map[match]);
+  }
+
+  function insertAfter(referenceNode, newNode) {
+    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+  }
+
   function attachEl(wrapper, output) {
     let content = document.createElement('div');
     content.innerHTML = output;
@@ -57,7 +74,7 @@ window.addEventListener('load', () => {
     wrapper.append(content);
   }
 
-  function processFollowings(wrapper, id, output, iteration) {
+  function processFollowings(wrapper, id, output, iteration, following) {
     let outputlist = '';
 
     fetchResult(`${apiBase}/x/relation/same/followings?vmid=${id}&pn=${iteration}`).then(data => {
@@ -74,38 +91,46 @@ window.addEventListener('load', () => {
         if (items.length > 0) {
           items.map(item => {
             let name = item.uname;
+            let status = item.attribute;
             let uid = item.mid;
-            let user_sign = item.sign;
+            let userSince = item.mtime;
+            let userSign = item.sign;
             let avatar = item.face;
             let tag = item.tag;
             let verify = item.official_verify;
+            let verifyColor = '#000';
             let vip = item.vip;
-            let linkColor = '#000';
-
-            if (vip?.vipType === 1 || vip?.vipType === 2) {
-              linkColor = '#fb7299';
-            }
+            let desc = `我的关注时间：${formatDate(userSince)}\n`;
 
             if (verify?.type === 0) {
-              linkColor = '#ff8d00';
+              verifyColor = '#ff8d00';
             } else if (verify?.type === 1) {
-              linkColor = '#30a8fd';
+              verifyColor = '#30a8fd';
+            }
+
+            if (verify?.type !== -1) {
+              desc += `认证：${verify.desc}\n`
             }
 
             outputlist += `<div>
-<a href="https://space.bilibili.com/${uid}" target="_blank" style="display: flex; align-items: center; margin-bottom: 5px; color: ${linkColor};">
-  <img src="${avatar}" style="width: 24px; height: 24px; border-radius: 2px; margin-right: 5px;" />
-${name}
+<a href="https://space.bilibili.com/${uid}" target="_blank" style="display: flex; align-items: center; margin-bottom: 5px; gap: 5px; color: inherit;">
+  <img src="${avatar}" style="width: 24px; height: 24px; border-radius: 2px;" />
+  <span style="color: ${verifyColor};" title="${desc}">${name}</span>
+  ${item.attribute === 6 ? `<span style="border-radius: 2px; background: #5963d6; color: #fff; width: 12px; height: 12px; font-size: 10px; font-weight: bold; text-align: center; line-height: 1;" title="已互粉">⇄</span>` : ''}
+  ${vip?.vipType !== 0 && vip?.vipStatus === 1 ? `<span title="${vip.label.text}\n会员有效期：${formatDate(vip.vipDueDate)}"><img src="${vip.avatar_subscript_url}" style="display: block; width: 12px; height: 12px;" /></span>` : ''}
+  <span style="opacity: .6; overflow: hidden; text-overflow: ellipsis; white-space: pre; flex: 1;" title="${sanitize(userSign)}" >${sanitize(userSign.replace(/(?:\r\n|\r|\n)/g, ''))}</span>
 </a></div>`;
           });
 
           debug('try next page', iteration + 1);
 
           let nextPageRequest = setTimeout(() => {
-            processFollowings(wrapper, id, output, iteration + 1);
-          }, 400 + Math.floor(Math.random() * 600));
+            processFollowings(wrapper, id, output, iteration + 1, following);
+          }, 800 + Math.floor(Math.random() * 600));
         } else {
           debug('loop finished');
+          // Attach stats
+          attachEl(wrapper.querySelector('div'), `共同关注：${total}，相似比：${percentDisplay(total / following * 100)}%`);
         }
 
         attachEl(wrapper, outputlist);
@@ -117,6 +142,7 @@ ${name}
     let iteration = 1;
     let resultContent = '';
     let idEl = wrapper.querySelector('.face') || wrapper.querySelector('.idc-avatar-container');
+    let followingEl = wrapper.querySelector('.info .social .like') || wrapper.querySelector('.idc-content .idc-meta .idc-meta-item');
     let id = '';
     let wrapPadding = '0px';
 
@@ -154,10 +180,14 @@ ${name}
       banner.innerHTML = `成分查询-本地查询版（<a href="${feedbackUrl}" target="_blank">问题反馈</a>）\n查询时间：${formatDate(Date.now())}`;
       contentWrap.append(banner);
 
+      // Process followingSum when id is available
+      let totalFollowing = followingEl.innerText.match(/(\d+)/)[1];
+      debug('following element', followingEl);
+
       // Inject prepared wrapper
       injectWrap.append(contentWrap);
 
-      processFollowings(contentWrap, id, resultContent, iteration);
+      processFollowings(contentWrap, id, resultContent, iteration, totalFollowing);
     }
   }
 
