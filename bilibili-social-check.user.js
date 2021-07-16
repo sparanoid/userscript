@@ -2,7 +2,7 @@
 // @name         bilibili 成分查询
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.8
+// @version      0.1.9
 // @description  bilibili 共同关注一键查询（本地查询版）
 // @author       Sparanoid
 // @license      AGPL
@@ -21,6 +21,19 @@ window.addEventListener('load', () => {
   const NAMESPACE = 'bilibili-social-check';
   const apiBase = 'https://api.bilibili.com';
   const feedbackUrl = 'https://t.bilibili.com/545085157213602473';
+  const conclusion = [
+    '🎤谁啊，真不熟', // 0
+    '纯路人了属于是', // 1
+    '有点共同爱好了', // 2
+    '共同兴趣还不少', // 3
+    '共同兴趣还挺多', // 4
+    '怎么会事呢', // 5
+    '很难不是好兄弟', // 6
+    '一家人了属于是', // 7
+    '很难不狂暴鸿儒', // 8
+    '我擦我不好说', //9
+    '克隆人是吧？' // 10
+  ]
 
   console.log(`${NAMESPACE} loaded`);
 
@@ -130,7 +143,7 @@ window.addEventListener('load', () => {
         } else {
           debug('loop finished');
           // Attach stats
-          attachEl(wrapper.querySelector('div'), `共同关注：${total}，相似比：${percentDisplay(total / following * 100)}%`);
+          attachEl(wrapper.querySelector('div'), `共同关注：${total}\n相似比：${percentDisplay(total / following * 100)}%（${conclusion[Math.round(total / following * 10)]}）`);
         }
 
         attachEl(wrapper, outputlist);
@@ -201,13 +214,13 @@ window.addEventListener('load', () => {
         [...mutation.addedNodes].map(item => {
           debug('mutation wrapper added', item);
 
-          // normal card, global, comments avatar, comment mentions, and etc.
+          // Normal card, global, comments avatar, comment mentions, and etc.
           if (item.classList?.contains('user-card')) {
             debug('mutation wrapper added (found target)', item);
             processCard(item);
           }
 
-          // following/follower list
+          // Following/follower list
           if (item.classList?.contains('idc-info')) {
             let parent = item.parentNode;
 
@@ -217,12 +230,23 @@ window.addEventListener('load', () => {
             }
           }
 
-          // card in dongtai mentions
+          // Cards in dongtai mentions
           if (item.classList?.contains('face')) {
             let parent = item.parentNode;
 
             if (parent.classList?.contains('userinfo-content')) {
               debug('mutation face item added (found target)', item);
+              processCard(parent);
+            }
+          }
+
+          // Cards in author area in video page
+          // .face element injected dynamically in a div wrapper without any CSS classes, I have to make sure it's an element before I can query it.
+          if (item instanceof Element && item.querySelector('.face')) {
+            let parent = item.parentNode;
+
+            if (parent.classList?.contains('user-card-m')) {
+              debug('mutation face item in video page added (found target)', parent);
               processCard(parent);
             }
           }
