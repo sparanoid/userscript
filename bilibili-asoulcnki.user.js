@@ -142,16 +142,16 @@ window.addEventListener('load', () => {
             if (relatedItems.length === 0) {
               resultContent += `一眼原创，再偷必究（查重结果仅作娱乐参考）`;
             } else {
-              let selfOriginal = +relatedItems[0][1].rpid === +id ? `（<span style="color: blue;">本文原创，已收录</span>）` : '';
+              let selfOriginal = +relatedItems[0].reply.rpid === +id ? `（<span style="color: blue;">本文原创，已收录</span>）` : '';
 
               resultContent += `重复次数：${relatedItems.length}${selfOriginal}\n`;
 
               relatedItems.map((item, idx) => {
-                let rate = item[0] * 100;
+                let rate = item.rate * 100;
 
-                resultContent += `#${idx + 1} <span style="color: ${rateColor(rate)}">${percentDisplay(rate)}%</span> <a href="${item[2].trim()}" title="${sanitize(item[1].content)}" target="_blank">${item[2].trim()}</a>
-发布于：${formatDate(item[1].ctime)}
-作者：${item[1].m_name} (UID <a href="https://space.bilibili.com/${item[1].mid}" target="_blank">${item[1].mid}</a>)\n\n`;
+                resultContent += `#${idx + 1} <span style="color: ${rateColor(rate)}">${percentDisplay(rate)}%</span> <a href="${item.reply_url.trim()}" title="${sanitize(item.reply.content)}" target="_blank">${item.reply_url.trim()}</a>
+发布于：${formatDate(item.reply.ctime)}
+作者：${item.reply.m_name} (UID <a href="https://space.bilibili.com/${item.reply.mid}" target="_blank">${item.reply.mid}</a>)\n\n`;
               });
 
               resultContent += `查重结果仅作娱乐参考，请注意辨别是否为原创`;
