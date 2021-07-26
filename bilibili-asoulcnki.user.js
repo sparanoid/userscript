@@ -2,7 +2,7 @@
 // @name         bilibili 枝网查重 API 版
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.9
+// @version      0.1.10
 // @description  bilibili 枝网（asoulcnki.asia）查重 API 版
 // @author       Sparanoid
 // @license      AGPL
