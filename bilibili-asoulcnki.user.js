@@ -2,7 +2,7 @@
 // @name         bilibili 枝网查重 API 版
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.11
+// @version      0.1.12
 // @description  bilibili 枝网（asoulcnki.asia）查重 API 版
 // @author       Sparanoid
 // @license      AGPL
@@ -20,6 +20,7 @@ window.addEventListener('load', () => {
   const DEBUG = true;
   const NAMESPACE = 'bilibili-asoulcnki';
   const apiBase = 'https://asoulcnki.asia';
+  const refTag = '?utm_source=bilibili-asoulcnki-plugin&utm_campaign=tampermonkey'
   const feedbackUrl = 'https://t.bilibili.com/545085157213602473';
 
   console.log(`${NAMESPACE} loaded`);
@@ -126,7 +127,7 @@ window.addEventListener('load', () => {
           let resultContent = '';
 
           if (data.code !== 0) {
-            resultContent = `返回结果错误，可能是文本内容过短，或请访问 <a href="${apiBase}/" target="_blank">枝网</a> 查看服务是否正常\n枝网返回结果参考：${data?.code || ''} ${data?.message || ''}`;
+            resultContent = `返回结果错误，可能是文本内容过短，或请访问 <a href="${apiBase}/${refTag}" target="_blank">枝网</a> 查看服务是否正常\n枝网返回结果参考：${data?.code || ''} ${data?.message || ''}`;
           } else {
             let result = data.data;
             let startTime = result.start_time;
@@ -134,14 +135,14 @@ window.addEventListener('load', () => {
             let rate = result.rate * 100;
             let relatedItems = result.related;
 
-            resultContent = `<a href="${apiBase}" target="_blank">枝网</a>文本复制检测报告（油猴一键版 ${feedbackUrl}）
+            resultContent = `<a href="${apiBase}/${refTag}" target="_blank">枝网</a>文本复制检测报告（油猴一键版 ${feedbackUrl}）
 查重时间：${formatDate(Date.now())}
 总文字复制比：<b style="color: ${rateColor(rate)}">${percentDisplay(rate)}%</b>\n`;
 
             if (relatedItems.length === 0) {
               resultContent += `一眼原创，再偷必究（查重结果仅作娱乐参考）`;
             } else {
-              let selfOriginal = +relatedItems[0].reply.rpid === +id ? `（<span style="color: blue;">本文原创，已收录</span>）` : '';
+              let selfOriginal = +relatedItems[0].reply.rpid === +id ? `（<span style="color: blue;">本文原创/原偷，已收录</span>）` : '';
               let relatedCountAlert = relatedItems.length === 5 ? `（最多只显示最近 5 次）` : '';
 
               resultContent += `重复次数：${relatedItems.length}${selfOriginal}${relatedCountAlert}\n`;
