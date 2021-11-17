@@ -2,7 +2,7 @@
 // @name         bilibili 成分查询
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.10
+// @version      0.1.11
 // @description  bilibili 共同关注一键查询（本地查询版）
 // @author       Sparanoid
 // @license      AGPL
@@ -131,6 +131,9 @@ window.addEventListener('load', () => {
             if (verify?.type !== -1) {
               desc += `认证：${verify.desc}\n`
             }
+
+            // Remove extra the trailling new line
+            desc = desc.trim();
 
             outputlist += `<div>
 <a href="https://space.bilibili.com/${uid}" target="_blank" style="display: flex; align-items: center; margin-bottom: 5px; gap: 5px; color: inherit;">
