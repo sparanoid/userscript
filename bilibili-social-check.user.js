@@ -2,7 +2,7 @@
 // @name         bilibili 成分查询
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.9
+// @version      0.1.10
 // @description  bilibili 共同关注一键查询（本地查询版）
 // @author       Sparanoid
 // @license      AGPL
@@ -15,6 +15,13 @@
 // @grant        none
 // @run-at       document-start
 // ==/UserScript==
+
+// Debugging pages:
+// - https://t.bilibili.com/594017148390748345
+// - https://www.bilibili.com/read/cv13871002
+// - https://space.bilibili.com/703007996/fans/follow
+// - https://www.bilibili.com/video/BV1Ar4y1C77P
+// - https://www.bilibili.com/video/BV1KL411g7om (colab)
 
 window.addEventListener('load', () => {
   const DEBUG = true;
@@ -155,14 +162,9 @@ window.addEventListener('load', () => {
     let iteration = 1;
     let resultContent = '';
     let idEl = wrapper.querySelector('.face') || wrapper.querySelector('.idc-avatar-container');
-    let followingEl = wrapper.querySelector('.info .social .like') || wrapper.querySelector('.idc-content .idc-meta .idc-meta-item');
+    let followingEl = wrapper.querySelector('.info .social span') || wrapper.querySelector('.info .social .like') || wrapper.querySelector('.idc-content .idc-meta .idc-meta-item');
     let id = '';
-    let wrapPadding = '0px';
-
-    // following/follower list
-    if (wrapper.querySelector('.idc-avatar-container')) {
-      wrapPadding = '1rem'
-    }
+    let wrapPadding = '1rem';
 
     if (idEl) {
       id = idEl.href.match(/\/\/space\.bilibili\.com\/(\d+)/)[1];
@@ -216,7 +218,7 @@ window.addEventListener('load', () => {
 
           // Normal card, global, comments avatar, comment mentions, and etc.
           if (item.classList?.contains('user-card')) {
-            debug('mutation wrapper added (found target)', item);
+            debug('mutation card detected (global card)', item);
             processCard(item);
           }
 
@@ -225,17 +227,18 @@ window.addEventListener('load', () => {
             let parent = item.parentNode;
 
             if (parent.getAttribute('id') === 'id-card') {
-              debug('mutation id wrapper added (found target)', item);
+              debug('mutation card detected (following/follower list)', item);
               processCard(parent);
             }
           }
 
           // Cards in dongtai mentions
+          // NOTE: deprecated since Oct 2021. Will fallback to global card
           if (item.classList?.contains('face')) {
             let parent = item.parentNode;
 
             if (parent.classList?.contains('userinfo-content')) {
-              debug('mutation face item added (found target)', item);
+              debug('mutation card detected (dynamic dongtai)', item);
               processCard(parent);
             }
           }
@@ -246,7 +249,7 @@ window.addEventListener('load', () => {
             let parent = item.parentNode;
 
             if (parent.classList?.contains('user-card-m')) {
-              debug('mutation face item in video page added (found target)', parent);
+              debug('mutation card detected (video colab author)', parent);
               processCard(parent);
             }
           }
