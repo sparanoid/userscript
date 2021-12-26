@@ -2,7 +2,7 @@
 // @name         bilibili 评论审核检测
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.0
+// @version      0.1.1
 // @description  bilibili 评论审核检测，可在回复/评论提交后实时反馈该内容是否对他人可见
 // @author       Sparanoid
 // @license      AGPL
@@ -44,43 +44,6 @@ window.addEventListener('load', () => {
     }
   }
 
-  function formatDate(timestamp) {
-    let date = timestamp.toString().length === 10 ? new Date(+timestamp * 1000) : new Date(+timestamp);
-    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-  }
-
-  function rateColor(percent) {
-    return `hsl(${100 - percent}, 70%, 45%)`;
-  }
-
-  function percentDisplay(num) {
-    return num.toFixed(2).replace('.00', '');
-  }
-
-  function sanitize(string) {
-    const map = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#x27;',
-      "/": '&#x2F;',
-    };
-    const reg = /[&<>"'/]/ig;
-    return string.replace(reg, match => map[match]);
-  }
-
-  function insertAfter(referenceNode, newNode) {
-    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
-  }
-
-  function attachEl(wrapper, output) {
-    let content = document.createElement('div');
-    content.innerHTML = output;
-
-    wrapper.append(content);
-  }
-
   ((open) => {
     XMLHttpRequest.prototype.open = function() {
       this.addEventListener("readystatechange", () => {
@@ -104,4 +67,3 @@ window.addEventListener('load', () => {
   })(XMLHttpRequest.prototype.open);
 
 }, false);
-
