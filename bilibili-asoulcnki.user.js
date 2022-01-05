@@ -2,7 +2,7 @@
 // @name         bilibili 枝网查重 API 版
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.12
+// @version      0.1.13
 // @description  bilibili 枝网（asoulcnki.asia）查重 API 版
 // @author       Sparanoid
 // @license      AGPL
@@ -168,6 +168,7 @@ window.addEventListener('load', () => {
           resultWrap.style.background = 'hsla(0, 0%, 50%, .1)';
           resultWrap.style.borderRadius = '4px';
           resultWrap.style.whiteSpace = 'pre';
+          resultWrap.style.flexBasis = '100%';
           resultWrap.classList.add('asoulcnki-result');
           resultWrap.innerHTML = resultContent;
 
