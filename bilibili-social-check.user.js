@@ -2,7 +2,7 @@
 // @name         bilibili 成分查询
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.11
+// @version      0.1.12
 // @description  bilibili 共同关注一键查询（本地查询版）
 // @author       Sparanoid
 // @license      AGPL
@@ -195,7 +195,9 @@ window.addEventListener('load', () => {
       banner.style.marginBottom = '.5rem';
       banner.style.borderBottom = '1px solid #eee';
       banner.style.whiteSpace = 'pre';
-      banner.innerHTML = `成分查询-本地查询版（<a href="${feedbackUrl}" target="_blank">问题反馈</a>）\n查询时间：${formatDate(Date.now())}`;
+      banner.innerHTML = `成分查询-本地查询版（<a href="${feedbackUrl}" target="_blank">问题反馈</a>）`
+        + `\n外部查询：<a href="https://space.bilibili.ooo/${id}" target="_blank">space.bilibili.ooo/${id}</a>（可绕过隐私设置）`
+        + `\n查询时间：${formatDate(Date.now())}`;
       contentWrap.append(banner);
 
       // Process followingSum when id is available
