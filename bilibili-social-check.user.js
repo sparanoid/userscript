@@ -164,8 +164,8 @@ window.addEventListener('load', () => {
   function processCard(wrapper) {
     let iteration = 1;
     let resultContent = '';
-    let idEl = wrapper.querySelector('.face') || wrapper.querySelector('.idc-avatar-container');
-    let followingEl = wrapper.querySelector('.info .social span') || wrapper.querySelector('.info .social .like') || wrapper.querySelector('.idc-content .idc-meta .idc-meta-item');
+    let idEl = wrapper.querySelector('.face') || wrapper.querySelector('.idc-avatar-container') || wrapper.querySelector('.card-user-name');
+    let followingEl = wrapper.querySelector('.info .social span') || wrapper.querySelector('.info .social .like') || wrapper.querySelector('.idc-content .idc-meta .idc-meta-item') || wrapper.querySelector('.card-social-info .card-user-attention span');
     let id = '';
     let wrapPadding = '1rem';
 
