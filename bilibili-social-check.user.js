@@ -249,12 +249,11 @@ window.addEventListener('load', () => {
           }
 
           // Cards in author area in video page
-          // .face element injected dynamically in a div wrapper without any CSS classes, I have to make sure it's an element before I can query it.
-          if (item instanceof Element && item.querySelector('.face')) {
+          if (item.classList?.contains('user-info-wrapper')) {
             let parent = item.parentNode;
 
-            if (parent.classList?.contains('user-card-m')) {
-              debug('mutation card detected (video colab author)', parent);
+            if (parent.classList?.contains('user-card-m-exp')) {
+              debug('mutation card detected (dynamic dongtai)', item);
               processCard(parent);
             }
           }
