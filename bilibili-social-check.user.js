@@ -2,7 +2,7 @@
 // @name         bilibili 成分查询
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.1.13
+// @version      0.1.14
 // @description  bilibili 共同关注一键查询（本地查询版）
 // @author       Sparanoid
 // @license      AGPL
@@ -196,7 +196,7 @@ window.addEventListener('load', () => {
       banner.style.borderBottom = '1px solid #eee';
       banner.style.whiteSpace = 'pre';
       banner.innerHTML = `成分查询-本地查询版（<a href="${feedbackUrl}" target="_blank">问题反馈</a>）`
-        + `\n外部查询：<a href="https://space.bilibili.ooo/${id}" target="_blank">space.bilibili.ooo/${id}</a>`
+        + `\n外部查询：<a href="https://laplace.live/user/${id}" target="_blank">laplace</a> / <a href="https://danmakus.com/user/${id}" target="_blank">danmakus</a> / <a href="https://space.bilibili.ooo/${id}" target="_blank">ooo</a>`
         + `\n查询时间：${formatDate(Date.now())}`;
       contentWrap.append(banner);
 
@@ -264,4 +264,3 @@ window.addEventListener('load', () => {
   wrapperObserver.observe(document.body, { attributes: false, childList: true, subtree: true });
 
 }, false);
-
