@@ -164,8 +164,8 @@ window.addEventListener('load', () => {
   function processCard(wrapper) {
     let iteration = 1;
     let resultContent = '';
-    let idEl = wrapper.querySelector('.face') || wrapper.querySelector('.idc-avatar-container');
-    let followingEl = wrapper.querySelector('.info .social span') || wrapper.querySelector('.info .social .like') || wrapper.querySelector('.idc-content .idc-meta .idc-meta-item');
+    let idEl = wrapper.querySelector('.face') || wrapper.querySelector('.idc-avatar-container') || wrapper.querySelector('.card-user-name');
+    let followingEl = wrapper.querySelector('.info .social span') || wrapper.querySelector('.info .social .like') || wrapper.querySelector('.idc-content .idc-meta .idc-meta-item') || wrapper.querySelector('.card-social-info .card-user-attention span');
     let id = '';
     let wrapPadding = '1rem';
 
@@ -249,12 +249,11 @@ window.addEventListener('load', () => {
           }
 
           // Cards in author area in video page
-          // .face element injected dynamically in a div wrapper without any CSS classes, I have to make sure it's an element before I can query it.
-          if (item instanceof Element && item.querySelector('.face')) {
+          if (item.classList?.contains('user-info-wrapper')) {
             let parent = item.parentNode;
 
-            if (parent.classList?.contains('user-card-m')) {
-              debug('mutation card detected (video colab author)', parent);
+            if (parent.classList?.contains('user-card-m-exp')) {
+              debug('mutation card detected (dynamic dongtai)', item);
               processCard(parent);
             }
           }
