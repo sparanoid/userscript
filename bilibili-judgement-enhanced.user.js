@@ -2,7 +2,7 @@
 // @name         bilibili 风纪委员增强
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      0.0.2
+// @version      0.0.3
 // @description  bilibili 风纪委员自动勾选表单，默认匿名发布
 // @author       Sparanoid
 // @license      AGPL
@@ -10,7 +10,7 @@
 // @compatible   edge 80 or later
 // @compatible   firefox 74 or later
 // @compatible   safari 13.1 or later
-// @match        https://www.bilibili.com/judgement/*
+// @match        https://www.bilibili.com/*
 // @icon         https://experiments.sparanoid.net/favicons/v2/www.bilibili.com.ico
 // @grant        none
 // @run-at       document-start
