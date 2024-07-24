@@ -10,9 +10,11 @@
 // @compatible   edge 80 or later
 // @compatible   firefox 74 or later
 // @compatible   safari 13.1 or later
-// @match        https://admin.shopify.com/store/*/orders/*
+// @match        https://admin.shopify.com/store/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=shopify.com
 // @grant        none
+// @downloadURL https://update.greasyfork.org/scripts/501654/Shopify%20Enhancer.user.js
+// @updateURL https://update.greasyfork.org/scripts/501654/Shopify%20Enhancer.meta.js
 // ==/UserScript==
 
 (function() {
