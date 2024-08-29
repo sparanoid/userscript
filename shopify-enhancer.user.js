@@ -2,7 +2,7 @@
 // @name         Shopify Enhancer
 // @namespace    https://github.com/sparanoid/userscript
 // @supportURL   https://github.com/sparanoid/userscript/issues
-// @version      2024-07-24
+// @version      2024-08-29
 // @description  Enhance Shopify admin dashboard with third-party providers support
 // @author       Sparanoid
 // @license      AGPL
@@ -20,7 +20,6 @@
 (function() {
   'use strict';
 
-  const WRAP_CLASSNAME = 'Polaris-Page'
   const ANCHOR_EL = 'div[class^=_addressWrapper]'
 
   const wrapperObserver = new MutationObserver((mutationsList, observer) => {
@@ -33,15 +32,16 @@
           // console.log('mutation wrapper added', item);
 
           // Main wrapper
-          if (item.classList?.contains(WRAP_CLASSNAME)) {
+          if (item.classList?.contains('Polaris-Page') || item?.id === 'AppFrame') {
             console.log('Main wrapper detected', item);
 
             const anchorEl = item.querySelector(ANCHOR_EL);
-            const telStr = anchorEl?.querySelector('a[href^="tel:"]')?.href
+            const telStr = anchorEl?.querySelector('a[href^="tel:"]')?.href || anchorEl?.querySelector('a')?.textContent
+            const resolvedTelStr = telStr.replaceAll(' ', '').replaceAll('+86', '')
 
-            if (telStr) {
+            if (resolvedTelStr) {
               const link = document.createElement('a');
-              link.setAttribute('href', `https://rouzao.com/orders/list?mobile=${telStr.replace('tel:', '')}`);
+              link.setAttribute('href', `https://rouzao.com/orders/list?mobile=${resolvedTelStr.replace('tel:', '')}`);
               link.setAttribute('target', '_blank');
               link.textContent = 'Search in Rouzao';
 
