@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili 直播间独轮车 LAPLACE ver.
 // @namespace    https://greasyfork.org/users/9967
-// @version      1.2.1
+// @version      1.2.2
 // @description  这是 bilibili 直播间简易版独轮车，基于 quiet/thusiant cmd 版本 https://greasyfork.org/scripts/421507 继续维护而来
 // @author       sparanoid
 // @license      AGPL
@@ -53,6 +53,13 @@ function trimText(text, maxLength) {
   return parts;
 }
 
+function extractRoomNumber(url) {
+  const urlObj = new URL(url);
+  const pathSegments = urlObj.pathname.split('/').filter(segment => segment !== '');
+  const roomNumber = pathSegments.find(segment => Number.isInteger(Number(segment)));
+  return roomNumber;
+}
+
 function processMessages(text, maxLength) {
   return text
     .split('\n')
@@ -68,8 +75,8 @@ function processMessages(text, maxLength) {
     toggleBtn.textContent = '独轮车面版';
     toggleBtn.style.cssText = `
       position: fixed;
-      right: 1rem;
-      bottom: 1rem;
+      right: 14px;
+      bottom: 14px;
       z-index: 1000;
       cursor: pointer;
       background: #777;
@@ -83,12 +90,12 @@ function processMessages(text, maxLength) {
     const list = document.createElement('div');
     list.style.cssText = `
       position: fixed;
-      right: 1rem;
-      bottom: calc(1rem + 30px);
+      right: 14px;
+      bottom: calc(14px + 30px);
       z-index: 1000;
       background: white;
       display: none;
-      padding: 1rem;
+      padding: 14px;
       box-shadow: 0 0 0 1px rgba(0, 0, 0, .2);
       border-radius: 4px;
       min-width: 50px;
@@ -106,10 +113,10 @@ function processMessages(text, maxLength) {
       <textarea id="msgList" placeholder="在这输入弹幕，每行一句话，超过可发送字数的会自动进行分割" style="height: 100px; width: 100%; resize: none;"></textarea>
       <div style="margin: .5em 0;">
         <span id="msgCount"></span><span>间隔</span>
-        <input id="msgSendInterval" style="width: 25px;" autocomplete="off" type="number" min="0" value="${GM_getValue('msgSendInterval')}">
+        <input id="msgSendInterval" style="width: 30px;" autocomplete="off" type="number" min="0" value="${GM_getValue('msgSendInterval')}">
         <span>秒，</span>
         <span>超过</span>
-        <input id="maxLength" style="width: 25px;" autocomplete="off" type="number" min="1" value="${GM_getValue('maxLength')}">
+        <input id="maxLength" style="width: 30px;" autocomplete="off" type="number" min="1" value="${GM_getValue('maxLength')}">
         <span>字自动分段</span>
       </div>
       <textarea id="msgLogs" style="height: 80px; width: 100%; resize: none;" placeholder="此处将输出日志" readonly></textarea>
@@ -225,9 +232,9 @@ function processMessages(text, maxLength) {
 async function loop() {
   let count = 0;
   const msgLogs = document.getElementById('msgLogs');
-  const shortUid = window.location.href.split('live.bilibili.com/')[1];
+  const shortUid = extractRoomNumber(window.location.href);
 
-  const room = await fetch(`http://api.live.bilibili.com/room/v1/Room/room_init?id=${shortUid}`, {
+  const room = await fetch(`https://api.live.bilibili.com/room/v1/Room/room_init?id=${shortUid}`, {
     method: 'GET',
     credentials: 'include'
   });
