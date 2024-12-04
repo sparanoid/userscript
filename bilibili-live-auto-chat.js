@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili 直播间独轮车 LAPLACE ver.
 // @namespace    https://greasyfork.org/users/9967
-// @version      1.2.2
+// @version      1.2.3
 // @description  这是 bilibili 直播间简易版独轮车，基于 quiet/thusiant cmd 版本 https://greasyfork.org/scripts/421507 继续维护而来
 // @author       sparanoid
 // @license      AGPL
@@ -13,7 +13,7 @@
 
 let MsgTemplates = GM_getValue('MsgTemplates', []);
 let activeTemplateIndex = GM_getValue('activeTemplateIndex', 0);
-const scriptInitVal = { msgSendInterval: 1, maxLength: 20 };
+const scriptInitVal = { msgSendInterval: 1, maxLength: 20, maxLogLines: 1000 };
 for (let initVal in scriptInitVal) {
   if (GM_getValue(initVal) === undefined) GM_setValue(initVal, scriptInitVal[initVal]);
 }
@@ -51,6 +51,17 @@ function trimText(text, maxLength) {
   }
 
   return parts;
+}
+
+function appendToLimitedLog(logElement, message, maxLines) {
+  const lines = logElement.value.split('\n');
+  if (lines.length >= maxLines) {
+    // Keep only the last (maxLines - 1) lines and add the new message
+    lines.splice(0, lines.length - maxLines + 1);
+  }
+  lines.push(message);
+  logElement.value = lines.join('\n');
+  logElement.scrollTop = logElement.scrollHeight;
 }
 
 function extractRoomNumber(url) {
@@ -119,21 +130,20 @@ function processMessages(text, maxLength) {
         <input id="maxLength" style="width: 30px;" autocomplete="off" type="number" min="1" value="${GM_getValue('maxLength')}">
         <span>字自动分段</span>
       </div>
-      <textarea id="msgLogs" style="height: 80px; width: 100%; resize: none;" placeholder="此处将输出日志" readonly></textarea>
+      <textarea id="msgLogs" style="height: 80px; width: 100%; resize: none;" placeholder="此处将输出日志（最多保留 ${GM_getValue('maxLogLines')} 条）" readonly></textarea>
       </div>`;
 
     document.body.appendChild(list);
 
     const sendBtn = document.getElementById('sendBtn');
     const msgLogs = document.getElementById('msgLogs');
+    const maxLogLines = GM_getValue('maxLogLines');
 
     sendBtn.addEventListener('click', () => {
       if (!sendMsg) {
-        // Check if current template is empty
         const currentTemplate = MsgTemplates[activeTemplateIndex] || '';
         if (!currentTemplate.trim()) {
-          msgLogs.value += '⚠️ 当前模板为空，请先输入内容\n';
-          msgLogs.scrollTop = msgLogs.scrollHeight;
+          appendToLimitedLog(msgLogs, '⚠️ 当前模板为空，请先输入内容', maxLogLines);
           return;
         }
 
@@ -232,6 +242,7 @@ function processMessages(text, maxLength) {
 async function loop() {
   let count = 0;
   const msgLogs = document.getElementById('msgLogs');
+  const maxLogLines = GM_getValue('maxLogLines');
   const shortUid = extractRoomNumber(window.location.href);
 
   const room = await fetch(`https://api.live.bilibili.com/room/v1/Room/room_init?id=${shortUid}`, {
@@ -251,8 +262,7 @@ async function loop() {
     if (sendMsg) {
       const currentTemplate = MsgTemplates[activeTemplateIndex] || '';
       if (!currentTemplate.trim()) {
-        msgLogs.value += '⚠️ 当前模板为空，已自动停止运行\n';
-        msgLogs.scrollTop = msgLogs.scrollHeight;
+        appendToLimitedLog(msgLogs, '⚠️ 当前模板为空，已自动停止运行', maxLogLines);
         sendMsg = false;
         const sendBtn = document.getElementById('sendBtn');
         const toggleBtn = document.getElementById('toggleBtn');
@@ -292,22 +302,19 @@ async function loop() {
 
             const sendApiRes = await send.json();
             const logMessage = sendApiRes.message
-              ? `❌「${message}」，原因：${sendApiRes.message}。\n`
-              : `✅「${message}」\n`;
+              ? `❌「${message}」，原因：${sendApiRes.message}。`
+              : `✅「${message}」`;
 
-            msgLogs.value += logMessage;
-            msgLogs.scrollTop = msgLogs.scrollHeight;
+            appendToLimitedLog(msgLogs, logMessage, maxLogLines);
             await new Promise(r => setTimeout(r, msgSendInterval * 1000));
           } catch (error) {
-            msgLogs.value += `🔴「${message}」失败，错误：${error.message}\n`;
-            msgLogs.scrollTop = msgLogs.scrollHeight;
+            appendToLimitedLog(msgLogs, `🔴「${message}」失败，错误：${error.message}`, maxLogLines);
           }
         }
       }
 
       count += 1;
-      msgLogs.value += `🔵第 ${count} 轮发送完成\n`;
-      msgLogs.scrollTop = msgLogs.scrollHeight;
+      appendToLimitedLog(msgLogs, `🔵第 ${count} 轮发送完成`, maxLogLines);
     } else {
       count = 0;
       await new Promise(r => setTimeout(r, 1000));
