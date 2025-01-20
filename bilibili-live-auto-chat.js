@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili 直播间独轮车 LAPLACE ver.
 // @namespace    https://greasyfork.org/users/9967
-// @version      1.2.3
+// @version      1.2.4
 // @description  这是 bilibili 直播间简易版独轮车，基于 quiet/thusiant cmd 版本 https://greasyfork.org/scripts/421507 继续维护而来
 // @author       sparanoid
 // @license      AGPL
@@ -88,7 +88,7 @@ function processMessages(text, maxLength) {
       position: fixed;
       right: 14px;
       bottom: 14px;
-      z-index: 1000;
+      z-index: 2147483647;
       cursor: pointer;
       background: #777;
       color: white;
@@ -103,7 +103,7 @@ function processMessages(text, maxLength) {
       position: fixed;
       right: 14px;
       bottom: calc(14px + 30px);
-      z-index: 1000;
+      z-index: 2147483647;
       background: white;
       display: none;
       padding: 14px;
