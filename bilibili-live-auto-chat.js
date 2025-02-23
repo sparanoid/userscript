@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili 直播间独轮车 LAPLACE ver.
 // @namespace    https://greasyfork.org/users/9967
-// @version      1.2.5
+// @version      1.2.6
 // @description  这是 bilibili 直播间简易版独轮车，基于 quiet/thusiant cmd 版本 https://greasyfork.org/scripts/421507 继续维护而来
 // @author       sparanoid
 // @license      AGPL
@@ -298,7 +298,7 @@ async function loop() {
         if (sendMsg) {
           try {
             if (enableRandomColor) {
-              const colorSet = ['0xe33fff', '0x54eed8', '0x58c1de', '0x455ff6', '0x975ef9', '0xc35986', '0xff8c21', '0xfff522', '0xff6868', '0x66ccff', '0x00fffc', '0x7eff00', '0xffed4f', '0xff9800', '0xffd700', '0x4169e1', '0xff739a']
+              const colorSet = ['0xe33fff', '0x54eed8', '0x58c1de', '0x455ff6', '0x975ef9', '0xc35986', '0xff8c21', '0x00fffc', '0x7eff00', '0xffed4f', '0xff9800']
               const randomColor = colorSet[Math.floor(Math.random() * colorSet.length)];
 
               const configForm = new FormData();
