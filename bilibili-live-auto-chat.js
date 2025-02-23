@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili 直播间独轮车 LAPLACE ver.
 // @namespace    https://greasyfork.org/users/9967
-// @version      1.2.4
+// @version      1.2.3
 // @description  这是 bilibili 直播间简易版独轮车，基于 quiet/thusiant cmd 版本 https://greasyfork.org/scripts/421507 继续维护而来
 // @author       sparanoid
 // @license      AGPL
@@ -13,7 +13,7 @@
 
 let MsgTemplates = GM_getValue('MsgTemplates', []);
 let activeTemplateIndex = GM_getValue('activeTemplateIndex', 0);
-const scriptInitVal = { msgSendInterval: 1, maxLength: 20, maxLogLines: 1000 };
+const scriptInitVal = { msgSendInterval: 1, maxLength: 20, maxLogLines: 1000, randomColor: false, randomInterval: false };
 for (let initVal in scriptInitVal) {
   if (GM_getValue(initVal) === undefined) GM_setValue(initVal, scriptInitVal[initVal]);
 }
@@ -124,11 +124,19 @@ function processMessages(text, maxLength) {
       <textarea id="msgList" placeholder="在这输入弹幕，每行一句话，超过可发送字数的会自动进行分割" style="height: 100px; width: 100%; resize: none;"></textarea>
       <div style="margin: .5em 0;">
         <span id="msgCount"></span><span>间隔</span>
-        <input id="msgSendInterval" style="width: 30px;" autocomplete="off" type="number" min="0" value="${GM_getValue('msgSendInterval')}">
+        <input id="msgSendInterval" style="width: 30px;" autocomplete="off" type="number" min="0" value="${GM_getValue('msgSendInterval')}" />
         <span>秒，</span>
         <span>超过</span>
-        <input id="maxLength" style="width: 30px;" autocomplete="off" type="number" min="1" value="${GM_getValue('maxLength')}">
-        <span>字自动分段</span>
+        <input id="maxLength" style="width: 30px;" autocomplete="off" type="number" min="1" value="${GM_getValue('maxLength')}" />
+        <span>字自动分段，</span>
+        <span style="display: inline-flex; align-items: center; gap: .25em;">
+          <input id="randomColor" type="checkbox" ${GM_getValue('randomColor') ? 'checked' : ''} />
+          <label for="randomColor">随机颜色</label>
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: .25em;">
+          <input id="randomInterval" type="checkbox" ${GM_getValue('randomInterval') ? 'checked' : ''} />
+          <label for="randomInterval">间隔增加随机性</label>
+        </span>
       </div>
       <textarea id="msgLogs" style="height: 80px; width: 100%; resize: none;" placeholder="此处将输出日志（最多保留 ${GM_getValue('maxLogLines')} 条）" readonly></textarea>
       </div>`;
@@ -166,6 +174,8 @@ function processMessages(text, maxLength) {
     const msgCount = document.getElementById('msgCount');
     const msgIntervalInput = document.getElementById('msgSendInterval');
     const maxLengthInput = document.getElementById('maxLength');
+    const randomColorInput = document.getElementById('randomColor');
+    const randomIntervalInput = document.getElementById('randomInterval');
     const templateSelect = document.getElementById('templateSelect');
     const addTemplateBtn = document.getElementById('addTemplateBtn');
     const removeTemplateBtn = document.getElementById('removeTemplateBtn');
@@ -175,7 +185,7 @@ function processMessages(text, maxLength) {
       MsgTemplates[activeTemplateIndex] = msgInput.value;
       GM_setValue('MsgTemplates', MsgTemplates);
       const Msg = processMessages(msgInput.value, maxLength);
-      msgCount.textContent = `共 ${Msg.length || 0} 条，`;
+      msgCount.textContent = `${Msg.length || 0} 条，`;
     }
 
     function updateTemplateSelect() {
@@ -225,6 +235,14 @@ function processMessages(text, maxLength) {
       GM_setValue('msgSendInterval', msgIntervalInput.value);
     });
 
+    randomColorInput.addEventListener('input', () => {
+      GM_setValue('randomColor', randomColorInput.checked);
+    });
+
+    randomIntervalInput.addEventListener('input', () => {
+      GM_setValue('randomInterval', randomIntervalInput.checked);
+    });
+
     maxLengthInput.addEventListener('input', () => {
       const value = parseInt(maxLengthInput.value);
       if (value < 1) maxLengthInput.value = 1;
@@ -253,10 +271,10 @@ async function loop() {
   const roomData = await room.json();
   const roomId = roomData.data.room_id;
   const csrfToken = document.cookie
-    .split(';')
-    .map(c => c.trim())
-    .find(c => c.startsWith('bili_jct='))
-    ?.split('bili_jct=')[1];
+  .split(';')
+  .map(c => c.trim())
+  .find(c => c.startsWith('bili_jct='))
+  ?.split('bili_jct=')[1];
 
   while (true) {
     if (sendMsg) {
@@ -272,11 +290,31 @@ async function loop() {
       }
 
       const msgSendInterval = GM_getValue('msgSendInterval');
+      const enableRandomColor = GM_getValue('randomColor');
+      const enableRandomInterval = GM_getValue('randomInterval');
       const Msg = processMessages(currentTemplate, GM_getValue('maxLength'));
 
       for (const message of Msg) {
         if (sendMsg) {
           try {
+            if (enableRandomColor) {
+              const colorSet = ['0xe33fff', '0x54eed8', '0x58c1de', '0x455ff6', '0x975ef9', '0xc35986', '0xff8c21', '0xfff522', '0xff6868', '0x66ccff', '0x00fffc', '0x7eff00', '0xffed4f', '0xff9800', '0xffd700', '0x4169e1', '0xff739a']
+              const randomColor = colorSet[Math.floor(Math.random() * colorSet.length)];
+
+              const configForm = new FormData();
+              configForm.append('room_id', String(roomId));
+              configForm.append('color', randomColor);
+              configForm.append('csrf_token', csrfToken);
+              configForm.append('csrf', csrfToken);
+              configForm.append('visit_id', '');
+
+              const updateConfig = await fetch('https://api.live.bilibili.com/xlive/web-room/v1/dM/AjaxSetConfig', {
+                method: 'POST',
+                credentials: 'include',
+                body: configForm
+              });
+            }
+
             const form = new FormData();
             form.append('bubble', '2');
             form.append('msg', message);
@@ -302,11 +340,13 @@ async function loop() {
 
             const sendApiRes = await send.json();
             const logMessage = sendApiRes.message
-              ? `❌「${message}」，原因：${sendApiRes.message}。`
+            ? `❌「${message}」，原因：${sendApiRes.message}。`
               : `✅「${message}」`;
 
             appendToLimitedLog(msgLogs, logMessage, maxLogLines);
-            await new Promise(r => setTimeout(r, msgSendInterval * 1000));
+
+            const resolvedRandomInterval = enableRandomInterval ? Math.floor(Math.random() * 500) : 0
+            await new Promise(r => setTimeout(r, msgSendInterval * 1000 - resolvedRandomInterval));
           } catch (error) {
             appendToLimitedLog(msgLogs, `🔴「${message}」失败，错误：${error.message}`, maxLogLines);
           }
