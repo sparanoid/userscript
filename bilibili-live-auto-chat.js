@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bilibili 直播间独轮车 LAPLACE ver.
 // @namespace    https://greasyfork.org/users/9967
-// @version      1.2.6
+// @version      1.2.7
 // @description  这是 bilibili 直播间简易版独轮车，基于 quiet/thusiant cmd 版本 https://greasyfork.org/scripts/421507 继续维护而来
 // @author       sparanoid
 // @license      AGPL
@@ -13,7 +13,7 @@
 
 let MsgTemplates = GM_getValue('MsgTemplates', []);
 let activeTemplateIndex = GM_getValue('activeTemplateIndex', 0);
-const scriptInitVal = { msgSendInterval: 1, maxLength: 20, maxLogLines: 1000, randomColor: false, randomInterval: false };
+const scriptInitVal = { msgSendInterval: 1, maxLength: 20, maxLogLines: 1000, randomColor: false, randomInterval: false, randomChar: false };
 for (let initVal in scriptInitVal) {
   if (GM_getValue(initVal) === undefined) GM_setValue(initVal, scriptInitVal[initVal]);
 }
@@ -71,10 +71,26 @@ function extractRoomNumber(url) {
   return roomNumber;
 }
 
-function processMessages(text, maxLength) {
+function addRandomCharacter(text) {
+  if (!text || text.length === 0) return text;
+
+  const graphemes = getGraphemes(text);
+  const randomIndex = Math.floor(Math.random() * (graphemes.length + 1));
+  graphemes.splice(randomIndex, 0, '­');
+  return graphemes.join('');
+}
+
+function processMessages(text, maxLength, addRandomChar = false) {
   return text
     .split('\n')
-    .map(line => trimText(line, maxLength))
+    .map(line => {
+      // Add random character if enabled
+      if (addRandomChar && line && line.trim()) {
+        line = addRandomCharacter(line);
+      }
+      // Then trim based on maxLength
+      return trimText(line, maxLength);
+    })
     .flat()
     .filter(line => line && line.trim());
 }
@@ -137,6 +153,10 @@ function processMessages(text, maxLength) {
           <input id="randomInterval" type="checkbox" ${GM_getValue('randomInterval') ? 'checked' : ''} />
           <label for="randomInterval">间隔增加随机性</label>
         </span>
+        <span style="display: inline-flex; align-items: center; gap: .25em;">
+          <input id="randomChar" type="checkbox" ${GM_getValue('randomChar') ? 'checked' : ''} />
+          <label for="randomChar">随机字符</label>
+        </span>
       </div>
       <textarea id="msgLogs" style="height: 80px; width: 100%; resize: none;" placeholder="此处将输出日志（最多保留 ${GM_getValue('maxLogLines')} 条）" readonly></textarea>
       </div>`;
@@ -176,6 +196,7 @@ function processMessages(text, maxLength) {
     const maxLengthInput = document.getElementById('maxLength');
     const randomColorInput = document.getElementById('randomColor');
     const randomIntervalInput = document.getElementById('randomInterval');
+    const randomCharInput = document.getElementById('randomChar');
     const templateSelect = document.getElementById('templateSelect');
     const addTemplateBtn = document.getElementById('addTemplateBtn');
     const removeTemplateBtn = document.getElementById('removeTemplateBtn');
@@ -243,6 +264,10 @@ function processMessages(text, maxLength) {
       GM_setValue('randomInterval', randomIntervalInput.checked);
     });
 
+    randomCharInput.addEventListener('input', () => {
+      GM_setValue('randomChar', randomCharInput.checked);
+    });
+
     maxLengthInput.addEventListener('input', () => {
       const value = parseInt(maxLengthInput.value);
       if (value < 1) maxLengthInput.value = 1;
@@ -271,10 +296,10 @@ async function loop() {
   const roomData = await room.json();
   const roomId = roomData.data.room_id;
   const csrfToken = document.cookie
-  .split(';')
-  .map(c => c.trim())
-  .find(c => c.startsWith('bili_jct='))
-  ?.split('bili_jct=')[1];
+    .split(';')
+    .map(c => c.trim())
+    .find(c => c.startsWith('bili_jct='))
+    ?.split('bili_jct=')[1];
 
   while (true) {
     if (sendMsg) {
@@ -292,7 +317,8 @@ async function loop() {
       const msgSendInterval = GM_getValue('msgSendInterval');
       const enableRandomColor = GM_getValue('randomColor');
       const enableRandomInterval = GM_getValue('randomInterval');
-      const Msg = processMessages(currentTemplate, GM_getValue('maxLength'));
+      const enableRandomChar = GM_getValue('randomChar');
+      const Msg = processMessages(currentTemplate, GM_getValue('maxLength'), enableRandomChar);
 
       for (const message of Msg) {
         if (sendMsg) {
@@ -340,7 +366,7 @@ async function loop() {
 
             const sendApiRes = await send.json();
             const logMessage = sendApiRes.message
-            ? `❌「${message}」，原因：${sendApiRes.message}。`
+              ? `❌「${message}」，原因：${sendApiRes.message}。`
               : `✅「${message}」`;
 
             appendToLimitedLog(msgLogs, logMessage, maxLogLines);
