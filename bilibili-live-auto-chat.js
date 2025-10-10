@@ -197,7 +197,7 @@ let replacementMap = null;
 			<div style="display: flex; margin-block: -5px .75em; margin-inline: -10px; padding: 0 10px; gap: .25em; border-bottom: 1px solid #ddd;">
 				<button id="tab-dulunche" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">独轮车</button>
 				<button id="tab-fasong" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">常规发送</button>
-				<button id="tab-settings" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">全局设置</button>
+				<button id="tab-settings" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">设置</button>
 			</div>
 
 			<!-- Tab Content: 独轮车 -->
