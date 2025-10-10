@@ -188,9 +188,10 @@ let cachedRoomId = null;
 
 		list.innerHTML = `<div>
       <!-- Tab Navigation -->
-      <div style="display: flex; margin-block: -5px .5em; margin-inline: -10px; padding: 0 10px; gap: .25em; border-bottom: 1px solid #ddd;">
+      <div style="display: flex; margin-block: -5px .75em; margin-inline: -10px; padding: 0 10px; gap: .25em; border-bottom: 1px solid #ddd;">
         <button id="tab-dulunche" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">独轮车</button>
         <button id="tab-fasong" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">常规发送</button>
+        <button id="tab-settings" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">全局设置</button>
       </div>
 
       <!-- Tab Content: 独轮车 -->
@@ -229,20 +230,21 @@ let cachedRoomId = null;
         <div style="margin: .5em 0;">
           <textarea id="fasongInput" placeholder="输入弹幕内容… (Enter 发送)" style="box-sizing: border-box; height: 50px; width: 100%; resize: vertical;"></textarea>
         </div>
+      </div>
 
-        <details style="margin-top: .25em;">
-          <summary style="cursor: pointer; user-select: none; font-weight: bold;">文本替换规则</summary>
-          <div style="margin-top: .5em;">
-						<div style="margin-block: .5em;">越靠后的优先级越高</div>
-            <div id="replacementRulesList" style="margin-bottom: .5em; max-height: 150px; overflow-y: auto;"></div>
-            <div style="display: flex; gap: .25em; align-items: center; flex-wrap: wrap;">
-              <input id="replaceFrom" placeholder="替换前" style="flex: 1; min-width: 80px;" />
-              <span>→</span>
-              <input id="replaceTo" placeholder="替换后" style="flex: 1; min-width: 80px;" />
-              <button id="addRuleBtn" style="padding: .25em .5em;">添加</button>
-            </div>
+      <!-- Tab Content: 全局设置 -->
+      <div id="content-settings" class="tab-content" style="display: none;">
+        <div style="margin: .5em 0;">
+          <div style="font-weight: bold; margin-bottom: .5em;">文本替换规则</div>
+          <div style="margin-block: .5em; color: #666;">适用于独轮车和常规发送，越靠后的优先级越高</div>
+          <div id="replacementRulesList" style="margin-bottom: .5em; max-height: 150px; overflow-y: auto;"></div>
+          <div style="display: flex; gap: .25em; align-items: center; flex-wrap: wrap;">
+            <input id="replaceFrom" placeholder="替换前" style="flex: 1; min-width: 80px;" />
+            <span>→</span>
+            <input id="replaceTo" placeholder="替换后" style="flex: 1; min-width: 80px;" />
+            <button id="addRuleBtn" style="padding: .25em .5em;">添加</button>
           </div>
-        </details>
+        </div>
       </div>
 
       <!-- Global Log Area -->
@@ -299,6 +301,10 @@ let cachedRoomId = null;
 
 		document.getElementById("tab-fasong")?.addEventListener("click", () => {
 			switchTab("fasong");
+		});
+
+		document.getElementById("tab-settings")?.addEventListener("click", () => {
+			switchTab("settings");
 		});
 
 		// Restore last active tab
@@ -469,21 +475,6 @@ let cachedRoomId = null;
 		const addRuleBtn = document.getElementById("addRuleBtn");
 
 		/**
-		 * Applies all replacement rules to the given text
-		 * @param {string} text - The text to apply replacements to
-		 * @returns {string} The text with all replacements applied
-		 */
-		function applyReplacements(text) {
-			let result = text;
-			for (const rule of replacementRules) {
-				if (rule.from) {
-					result = result.split(rule.from).join(rule.to);
-				}
-			}
-			return result;
-		}
-
-		/**
 		 * Updates the display of replacement rules
 		 * @returns {void}
 		 */
@@ -635,6 +626,22 @@ let cachedRoomId = null;
 })();
 
 /**
+ * Applies all replacement rules to the given text
+ * @param {string} text - The text to apply replacements to
+ * @returns {string} The text with all replacements applied
+ */
+function applyReplacements(text) {
+	const replacementRules = GM_getValue("replacementRules", []);
+	let result = text;
+	for (const rule of replacementRules) {
+		if (rule.from) {
+			result = result.split(rule.from).join(rule.to);
+		}
+	}
+	return result;
+}
+
+/**
  * Gets the CSRF token from browser cookies
  * @returns {string|undefined} The CSRF token (bili_jct), or undefined if not found
  */
@@ -775,6 +782,11 @@ async function loop() {
 
 			for (const message of Msg) {
 				if (sendMsg) {
+					// Apply text replacements
+					const originalMessage = message;
+					const processedMessage = applyReplacements(message);
+					const wasReplaced = originalMessage !== processedMessage;
+
 					if (enableRandomColor) {
 						const colorSet = [
 							"0xe33fff",
@@ -809,10 +821,13 @@ async function loop() {
 						);
 					}
 
-					const result = await sendDanmaku(message, roomId, csrfToken);
+					const result = await sendDanmaku(processedMessage, roomId, csrfToken);
+					const displayMsg = wasReplaced
+						? `${originalMessage} → ${processedMessage}`
+						: processedMessage;
 					const logMessage = result.success
-						? `✅ 自动: ${result.message}`
-						: `❌ 自动: ${result.message}，原因：${result.error}。`;
+						? `✅ 自动: ${displayMsg}`
+						: `❌ 自动: ${displayMsg}，原因：${result.error}。`;
 
 					appendToLimitedLog(msgLogs, logMessage, maxLogLines);
 
