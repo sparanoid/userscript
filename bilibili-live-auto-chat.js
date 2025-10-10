@@ -443,17 +443,24 @@ function processMessages(text, maxLength, addRandomChar = false) {
 })();
 
 /**
- * Main loop function that handles sending messages to Bilibili live chat
- * Continuously checks if sendMsg is true and sends queued messages with configured intervals
- * @returns {Promise<void>}
+ * Gets the CSRF token from browser cookies
+ * @returns {string|undefined} The CSRF token (bili_jct), or undefined if not found
  */
-async function loop() {
-	let count = 0;
-	/** @type {HTMLTextAreaElement} */
-	const msgLogs = document.getElementById("msgLogs");
-	/** @type {number} */
-	const maxLogLines = GM_getValue("maxLogLines");
-	const shortUid = extractRoomNumber(window.location.href);
+function getCsrfToken() {
+	return document.cookie
+		.split(";")
+		.map((c) => c.trim())
+		.find((c) => c.startsWith("bili_jct="))
+		?.split("bili_jct=")[1];
+}
+
+/**
+ * Gets the room ID for a Bilibili live room
+ * @param {string} [url] - The room URL (defaults to current page URL)
+ * @returns {Promise<number>} The room ID
+ */
+async function getRoomId(url = window.location.href) {
+	const shortUid = extractRoomNumber(url);
 
 	const room = await fetch(
 		`https://api.live.bilibili.com/room/v1/Room/room_init?id=${shortUid}`,
@@ -465,13 +472,78 @@ async function loop() {
 
 	/** @type {{data: {room_id: number}}} */
 	const roomData = await room.json();
-	const roomId = roomData.data.room_id;
-	/** @type {string|undefined} */
-	const csrfToken = document.cookie
-		.split(";")
-		.map((c) => c.trim())
-		.find((c) => c.startsWith("bili_jct="))
-		?.split("bili_jct=")[1];
+	return roomData.data.room_id;
+}
+
+/**
+ * Sends a single danmaku message to Bilibili live room
+ * @param {string} message - The message text to send
+ * @param {number} roomId - The room ID to send the message to
+ * @param {string} csrfToken - The CSRF token for authentication
+ * @returns {Promise<{success: boolean, message: string, error?: string}>} Result of the send operation
+ */
+async function sendDanmaku(message, roomId, csrfToken) {
+	const form = new FormData();
+	form.append("bubble", "2");
+	form.append("msg", message);
+	form.append("color", "16777215");
+	form.append("mode", "1");
+	form.append("room_type", "0");
+	form.append("jumpfrom", "0");
+	form.append("reply_mid", "0");
+	form.append("reply_attr", "0");
+	form.append("replay_dmid", "");
+	form.append("statistics", '{"appId":100,"platform":5}');
+	form.append("fontsize", "25");
+	form.append("rnd", String(Math.floor(Date.now() / 1000)));
+	form.append("roomid", String(roomId));
+	form.append("csrf", csrfToken);
+	form.append("csrf_token", csrfToken);
+
+	try {
+		const resp = await fetch("https://api.live.bilibili.com/msg/send", {
+			method: "POST",
+			credentials: "include",
+			body: form,
+		});
+
+		/** @type {{message?: string, code?: number}} */
+		const json = await resp.json();
+
+		if (json.message) {
+			return {
+				success: false,
+				message: message,
+				error: json.message,
+			};
+		}
+
+		return {
+			success: true,
+			message: message,
+		};
+	} catch (error) {
+		return {
+			success: false,
+			message: message,
+			error: error.message,
+		};
+	}
+}
+
+/**
+ * Main loop function that handles sending messages to Bilibili live chat
+ * Continuously checks if sendMsg is true and sends queued messages with configured intervals
+ * @returns {Promise<void>}
+ */
+async function loop() {
+	let count = 0;
+	/** @type {HTMLTextAreaElement} */
+	const msgLogs = document.getElementById("msgLogs");
+	/** @type {number} */
+	const maxLogLines = GM_getValue("maxLogLines");
+	const roomId = await getRoomId();
+	const csrfToken = getCsrfToken();
 
 	while (true) {
 		if (sendMsg) {
@@ -506,85 +578,53 @@ async function loop() {
 
 			for (const message of Msg) {
 				if (sendMsg) {
-					try {
-						if (enableRandomColor) {
-							const colorSet = [
-								"0xe33fff",
-								"0x54eed8",
-								"0x58c1de",
-								"0x455ff6",
-								"0x975ef9",
-								"0xc35986",
-								"0xff8c21",
-								"0x00fffc",
-								"0x7eff00",
-								"0xffed4f",
-								"0xff9800",
-							];
-							const randomColor =
-								colorSet[Math.floor(Math.random() * colorSet.length)];
+					if (enableRandomColor) {
+						const colorSet = [
+							"0xe33fff",
+							"0x54eed8",
+							"0x58c1de",
+							"0x455ff6",
+							"0x975ef9",
+							"0xc35986",
+							"0xff8c21",
+							"0x00fffc",
+							"0x7eff00",
+							"0xffed4f",
+							"0xff9800",
+						];
+						const randomColor =
+							colorSet[Math.floor(Math.random() * colorSet.length)];
 
-							const configForm = new FormData();
-							configForm.append("room_id", String(roomId));
-							configForm.append("color", randomColor);
-							configForm.append("csrf_token", csrfToken);
-							configForm.append("csrf", csrfToken);
-							configForm.append("visit_id", "");
+						const configForm = new FormData();
+						configForm.append("room_id", String(roomId));
+						configForm.append("color", randomColor);
+						configForm.append("csrf_token", csrfToken);
+						configForm.append("csrf", csrfToken);
+						configForm.append("visit_id", "");
 
-							const _updateConfig = await fetch(
-								"https://api.live.bilibili.com/xlive/web-room/v1/dM/AjaxSetConfig",
-								{
-									method: "POST",
-									credentials: "include",
-									body: configForm,
-								},
-							);
-						}
-
-						const form = new FormData();
-						form.append("bubble", "2");
-						form.append("msg", message);
-						form.append("color", "16777215");
-						form.append("mode", "1");
-						form.append("room_type", "0");
-						form.append("jumpfrom", "0");
-						form.append("reply_mid", "0");
-						form.append("reply_attr", "0");
-						form.append("replay_dmid", "");
-						form.append("statistics", '{"appId":100,"platform":5}');
-						form.append("fontsize", "25");
-						form.append("rnd", String(Math.floor(Date.now() / 1000)));
-						form.append("roomid", String(roomId));
-						form.append("csrf", csrfToken);
-						form.append("csrf_token", csrfToken);
-
-						const send = await fetch("https://api.live.bilibili.com/msg/send", {
-							method: "POST",
-							credentials: "include",
-							body: form,
-						});
-
-						/** @type {{message?: string}} */
-						const sendApiRes = await send.json();
-						const logMessage = sendApiRes.message
-							? `❌「${message}」，原因：${sendApiRes.message}。`
-							: `✅「${message}」`;
-
-						appendToLimitedLog(msgLogs, logMessage, maxLogLines);
-
-						const resolvedRandomInterval = enableRandomInterval
-							? Math.floor(Math.random() * 500)
-							: 0;
-						await new Promise((r) =>
-							setTimeout(r, msgSendInterval * 1000 - resolvedRandomInterval),
-						);
-					} catch (error) {
-						appendToLimitedLog(
-							msgLogs,
-							`🔴「${message}」失败，错误：${error.message}`,
-							maxLogLines,
+						const _updateConfig = await fetch(
+							"https://api.live.bilibili.com/xlive/web-room/v1/dM/AjaxSetConfig",
+							{
+								method: "POST",
+								credentials: "include",
+								body: configForm,
+							},
 						);
 					}
+
+					const result = await sendDanmaku(message, roomId, csrfToken);
+					const logMessage = result.success
+						? `✅「${result.message}」`
+						: `❌「${result.message}」，原因：${result.error}。`;
+
+					appendToLimitedLog(msgLogs, logMessage, maxLogLines);
+
+					const resolvedRandomInterval = enableRandomInterval
+						? Math.floor(Math.random() * 500)
+						: 0;
+					await new Promise((r) =>
+						setTimeout(r, msgSendInterval * 1000 - resolvedRandomInterval),
+					);
 				}
 			}
 
