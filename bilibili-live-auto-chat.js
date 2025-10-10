@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         LAPLACE Chatterbox 弹幕助手 - 哔哩哔哩直播间独轮车、弹幕发送
+// @name         LAPLACE 弹幕助手 - 哔哩哔哩直播间独轮车、弹幕发送
 // @namespace    https://greasyfork.org/users/9967
 // @version      1.2.7
 // @description  这是 bilibili 直播间简易版独轮车，基于 quiet/thusiant cmd 版本 https://greasyfork.org/scripts/421507 继续维护而来
@@ -145,6 +145,9 @@ function processMessages(text, maxLength, addRandomChar = false) {
 		.filter((line) => line?.trim());
 }
 
+/** @type {number|null} */
+let cachedRoomId = null;
+
 (() => {
 	const check = setInterval(() => {
 		/** @type {HTMLDivElement} */
@@ -153,8 +156,8 @@ function processMessages(text, maxLength, addRandomChar = false) {
 		toggleBtn.textContent = "弹幕助手";
 		toggleBtn.style.cssText = `
       position: fixed;
-      right: 14px;
-      bottom: 14px;
+      right: 4px;
+      bottom: 4px;
       z-index: 2147483647;
       cursor: pointer;
       background: #777;
@@ -169,8 +172,8 @@ function processMessages(text, maxLength, addRandomChar = false) {
 		const list = document.createElement("div");
 		list.style.cssText = `
       position: fixed;
-      right: 14px;
-      bottom: calc(14px + 30px);
+      right: 4px;
+      bottom: calc(4px + 30px);
       z-index: 2147483647;
       background: white;
       display: none;
@@ -178,16 +181,16 @@ function processMessages(text, maxLength, addRandomChar = false) {
       box-shadow: 0 0 0 1px rgba(0, 0, 0, .2);
       border-radius: 4px;
       min-width: 50px;
+			max-height: calc(100vh - 64px);
+			overflow-y: auto;
       width: 300px;
     `;
 
 		list.innerHTML = `<div>
-      <div style="font-weight: bold;">独轮车 LAPLACE ver.</div>
-
       <!-- Tab Navigation -->
-      <div style="display: flex; margin: .5em -10px; padding: 0 10px; gap: .25em; border-bottom: 1px solid #ddd;">
-        <button id="tab-dulunche" class="tab-btn" style="padding: .25em 1em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">独轮车</button>
-        <button id="tab-fasong" class="tab-btn" style="padding: .25em 1em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">发送</button>
+      <div style="display: flex; margin-block: -5px .5em; margin-inline: -10px; padding: 0 10px; gap: .25em; border-bottom: 1px solid #ddd;">
+        <button id="tab-dulunche" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">独轮车</button>
+        <button id="tab-fasong" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">常规发送</button>
       </div>
 
       <!-- Tab Content: 独轮车 -->
@@ -198,7 +201,7 @@ function processMessages(text, maxLength, addRandomChar = false) {
           <button id="addTemplateBtn">新增</button>
           <button id="removeTemplateBtn">删除当前</button>
         </div>
-        <textarea id="msgList" placeholder="在这输入弹幕，每行一句话，超过可发送字数的会自动进行分割" style="box-sizing: border-box; height: 100px; width: 100%; resize: none;"></textarea>
+        <textarea id="msgList" placeholder="在这输入弹幕，每行一句话，超过可发送字数的会自动进行分割" style="box-sizing: border-box; height: 100px; width: 100%; resize: vertical;"></textarea>
         <div style="margin: .5em 0;">
           <span id="msgCount"></span><span>间隔</span>
           <input id="msgSendInterval" style="width: 30px;" autocomplete="off" type="number" min="0" value="${GM_getValue("msgSendInterval")}" />
@@ -223,15 +226,28 @@ function processMessages(text, maxLength, addRandomChar = false) {
 
       <!-- Tab Content: 发送 -->
       <div id="content-fasong" class="tab-content" style="display: none;">
-        <div style="padding: 2em; text-align: center; color: #999;">
-          <p>此功能正在开发中...</p>
-          <p style="margin-top: 1em;">敬请期待</p>
+        <div style="margin: .5em 0;">
+          <textarea id="fasongInput" placeholder="输入弹幕内容… (Enter 发送)" style="box-sizing: border-box; height: 50px; width: 100%; resize: vertical;"></textarea>
         </div>
+
+        <details style="margin-top: .25em;">
+          <summary style="cursor: pointer; user-select: none; font-weight: bold;">文本替换规则</summary>
+          <div style="margin-top: .5em;">
+						<div style="margin-block: .5em;">越靠后的优先级越高</div>
+            <div id="replacementRulesList" style="margin-bottom: .5em; max-height: 150px; overflow-y: auto;"></div>
+            <div style="display: flex; gap: .25em; align-items: center; flex-wrap: wrap;">
+              <input id="replaceFrom" placeholder="替换前" style="flex: 1; min-width: 80px;" />
+              <span>→</span>
+              <input id="replaceTo" placeholder="替换后" style="flex: 1; min-width: 80px;" />
+              <button id="addRuleBtn" style="padding: .25em .5em;">添加</button>
+            </div>
+          </div>
+        </details>
       </div>
 
       <!-- Global Log Area -->
-      <details style="margin-top: .5em;">
-        <summary style="cursor: pointer; user-select: none; font-weight: bold; padding: .25em 0;">日志</summary>
+      <details style="margin-top: .25em;">
+        <summary style="cursor: pointer; user-select: none; font-weight: bold;">日志</summary>
         <textarea id="msgLogs" style="box-sizing: border-box; height: 80px; width: 100%; resize: none; margin-top: .5em;" placeholder="此处将输出日志（最多保留 ${GM_getValue("maxLogLines")} 条）" readonly></textarea>
       </details>
       </div>`;
@@ -437,6 +453,182 @@ function processMessages(text, maxLength, addRandomChar = false) {
 
 		updateTemplateSelect();
 
+		// ===== 发送 Tab Features =====
+		/** @type {Array<{from: string, to: string}>} */
+		const replacementRules = GM_getValue("replacementRules", []);
+
+		/** @type {HTMLTextAreaElement} */
+		const fasongInput = document.getElementById("fasongInput");
+		/** @type {HTMLDivElement} */
+		const replacementRulesList = document.getElementById("replacementRulesList");
+		/** @type {HTMLInputElement} */
+		const replaceFromInput = document.getElementById("replaceFrom");
+		/** @type {HTMLInputElement} */
+		const replaceToInput = document.getElementById("replaceTo");
+		/** @type {HTMLButtonElement} */
+		const addRuleBtn = document.getElementById("addRuleBtn");
+
+		/**
+		 * Applies all replacement rules to the given text
+		 * @param {string} text - The text to apply replacements to
+		 * @returns {string} The text with all replacements applied
+		 */
+		function applyReplacements(text) {
+			let result = text;
+			for (const rule of replacementRules) {
+				if (rule.from) {
+					result = result.split(rule.from).join(rule.to);
+				}
+			}
+			return result;
+		}
+
+		/**
+		 * Updates the display of replacement rules
+		 * @returns {void}
+		 */
+		function updateReplacementRulesDisplay() {
+			if (replacementRules.length === 0) {
+				replacementRulesList.innerHTML = '<div style="color: #999;">暂无替换规则，请在下方添加</div>';
+				return;
+			}
+
+			replacementRulesList.innerHTML = replacementRules
+				.map((rule, index) => {
+					const fromDisplay = rule.from || "(空)";
+					const toDisplay = rule.to || "(空)";
+					return `
+						<div style="display: flex; align-items: center; gap: .5em; padding: .2em; border-bottom: 1px solid #eee;">
+							<span style="flex: 1; word-break: break-all; font-family: monospace;">${fromDisplay} → ${toDisplay}</span>
+							<button class="remove-rule-btn" data-index="${index}" style="cursor: pointer; background: transparent; color: red; border: none; border-radius: 2px;">删除</button>
+						</div>
+					`;
+				})
+				.join("");
+
+			// Add event listeners to remove buttons
+			document.querySelectorAll(".remove-rule-btn").forEach((btn) => {
+				btn.addEventListener("click", (e) => {
+					const index = parseInt(e.target.getAttribute("data-index"), 10);
+					replacementRules.splice(index, 1);
+					GM_setValue("replacementRules", replacementRules);
+					updateReplacementRulesDisplay();
+				});
+			});
+		}
+
+		// Add new replacement rule
+		addRuleBtn.addEventListener("click", () => {
+			const from = replaceFromInput.value;
+			const to = replaceToInput.value;
+
+			if (!from) {
+				appendToLimitedLog(msgLogs, "⚠️ 替换前的内容不能为空", maxLogLines);
+				return;
+			}
+
+			replacementRules.push({ from, to });
+			GM_setValue("replacementRules", replacementRules);
+
+			replaceFromInput.value = "";
+			replaceToInput.value = "";
+
+			updateReplacementRulesDisplay();
+			// appendToLimitedLog(msgLogs, `✅ 已添加替换规则：${from} → ${to}`, maxLogLines);
+		});
+
+		// Allow Enter key to add rule in replace inputs
+		replaceFromInput.addEventListener("keypress", (e) => {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				addRuleBtn.click();
+			}
+		});
+
+		replaceToInput.addEventListener("keypress", (e) => {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				addRuleBtn.click();
+			}
+		});
+
+		// Send message functionality
+		async function sendMessage() {
+			const originalMessage = fasongInput.value.trim();
+
+			if (!originalMessage) {
+				appendToLimitedLog(msgLogs, "⚠️ 消息内容不能为空", maxLogLines);
+				return;
+			}
+
+			// Apply text replacements
+			const processedMessage = applyReplacements(originalMessage);
+			const wasReplaced = originalMessage !== processedMessage;
+
+			// Clear input immediately after getting the message
+			fasongInput.value = "";
+
+			try {
+				// Use cached room ID, or fetch it if not available yet
+				if (cachedRoomId === null) {
+					cachedRoomId = await getRoomId();
+				}
+				const roomId = cachedRoomId;
+				const csrfToken = getCsrfToken();
+
+				if (!csrfToken) {
+					appendToLimitedLog(msgLogs, "❌ 未找到登录信息，请先登录 Bilibili", maxLogLines);
+					return;
+				}
+
+				const result = await sendDanmaku(processedMessage, roomId, csrfToken);
+
+				if (result.success) {
+					const displayMsg = wasReplaced
+						? `${originalMessage} → ${processedMessage}`
+						: processedMessage;
+					appendToLimitedLog(msgLogs, `✅ 手动: ${displayMsg}`, maxLogLines);
+				} else {
+					let errorMsg = result.error || "未知错误";
+
+					// Handle specific error codes
+					if (result.error) {
+						if (result.error.includes("f")) {
+							errorMsg = "包含全局屏蔽词 (f)";
+						} else if (result.error.includes("k")) {
+							errorMsg = "包含房间屏蔽词 (k)";
+						}
+					}
+
+					const displayMsg = wasReplaced
+						? `${originalMessage} → ${processedMessage}`
+						: processedMessage;
+					appendToLimitedLog(
+						msgLogs,
+						`❌ 手动: ${displayMsg}，原因：${errorMsg}`,
+						maxLogLines
+					);
+				}
+			} catch (error) {
+				appendToLimitedLog(
+					msgLogs,
+					`🔴 发送出错：${error.message}`,
+					maxLogLines
+				);
+			}
+		}
+
+		// Allow Enter to send message
+		fasongInput.addEventListener("keydown", (e) => {
+			if (e.key === "Enter" && !e.shiftKey) {
+				e.preventDefault();
+				sendMessage();
+			}
+		});
+
+		// Initialize replacement rules display
+		updateReplacementRulesDisplay();
+
 		loop();
 		clearInterval(check);
 	}, 100);
@@ -542,7 +734,12 @@ async function loop() {
 	const msgLogs = document.getElementById("msgLogs");
 	/** @type {number} */
 	const maxLogLines = GM_getValue("maxLogLines");
-	const roomId = await getRoomId();
+
+	// Fetch and cache room ID on first call
+	if (cachedRoomId === null) {
+		cachedRoomId = await getRoomId();
+	}
+	const roomId = cachedRoomId;
 	const csrfToken = getCsrfToken();
 
 	while (true) {
@@ -614,8 +811,8 @@ async function loop() {
 
 					const result = await sendDanmaku(message, roomId, csrfToken);
 					const logMessage = result.success
-						? `✅「${result.message}」`
-						: `❌「${result.message}」，原因：${result.error}。`;
+						? `✅ 自动: ${result.message}`
+						: `❌ 自动: ${result.message}，原因：${result.error}。`;
 
 					appendToLimitedLog(msgLogs, logMessage, maxLogLines);
 
