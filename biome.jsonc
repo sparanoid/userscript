@@ -1,0 +1,60 @@
+// Based on https://github.com/vercel/next.js/blob/canary/packages/create-next-app/templates/app-tw/ts/biome.json
+{
+	"$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"files": {
+		"ignoreUnknown": true,
+		"includes": [
+			"**",
+			"!node_modules",
+			"!dist",
+			"!build",
+			"!output",
+			"!out",
+			"!public",
+			"!references"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "space",
+		"indentWidth": 2,
+		"lineWidth": 120
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"suspicious": {
+				"noDuplicateProperties": "off",
+				"noDuplicateCustomProperties": "off",
+				// https://github.com/biomejs/biome/issues/7223
+				"noUnknownAtRules": "off"
+			},
+			"complexity": {
+				"noImportantStyles": "off"
+			},
+			"nursery": {
+				// https://biomejs.dev/linter/rules/use-sorted-classes/
+				// "useSortedClasses": "error"
+			},
+			// This should be removed after all css modules are migrated to tailwind
+			"style": {
+				"noDescendingSpecificity": "off"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "single",
+			"jsxQuoteStyle": "single",
+			"semicolons": "asNeeded",
+			"trailingCommas": "es5",
+			"arrowParentheses": "asNeeded"
+		}
+	}
+}
