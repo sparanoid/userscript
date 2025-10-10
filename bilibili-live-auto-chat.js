@@ -169,7 +169,10 @@ function processMessages(text, maxLength, addRandomChar = false) {
           <label for="randomChar">随机字符</label>
         </span>
       </div>
-      <textarea id="msgLogs" style="height: 80px; width: 100%; resize: none;" placeholder="此处将输出日志（最多保留 ${GM_getValue("maxLogLines")} 条）" readonly></textarea>
+      <details style="margin-top: .5em;">
+        <summary style="cursor: pointer; user-select: none; font-weight: bold; padding: .25em 0;">日志</summary>
+        <textarea id="msgLogs" style="height: 80px; width: 100%; resize: none; margin-top: .5em;" placeholder="此处将输出日志（最多保留 ${GM_getValue("maxLogLines")} 条）" readonly></textarea>
+      </details>
       </div>`;
 
 		document.body.appendChild(list);
