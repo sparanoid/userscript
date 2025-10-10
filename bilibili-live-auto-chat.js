@@ -148,6 +148,12 @@ function processMessages(text, maxLength, addRandomChar = false) {
 /** @type {number|null} */
 let cachedRoomId = null;
 
+/** @type {Function|null} */
+let onRoomIdReadyCallback = null;
+
+/** @type {Map<string, string>|null} */
+let replacementMap = null;
+
 (() => {
 	const check = setInterval(() => {
 		/** @type {HTMLDivElement} */
@@ -155,104 +161,121 @@ let cachedRoomId = null;
 		toggleBtn.id = "toggleBtn";
 		toggleBtn.textContent = "弹幕助手";
 		toggleBtn.style.cssText = `
-      position: fixed;
-      right: 4px;
-      bottom: 4px;
-      z-index: 2147483647;
-      cursor: pointer;
-      background: #777;
-      color: white;
-      padding: 6px 8px;
-      border-radius: 4px;
-      user-select: none;
-    `;
+			position: fixed;
+			right: 4px;
+			bottom: 4px;
+			z-index: 2147483647;
+			cursor: pointer;
+			background: #777;
+			color: white;
+			padding: 6px 8px;
+			border-radius: 4px;
+			user-select: none;
+		`;
 		document.body.appendChild(toggleBtn);
 
 		/** @type {HTMLDivElement} */
 		const list = document.createElement("div");
 		list.style.cssText = `
-      position: fixed;
-      right: 4px;
-      bottom: calc(4px + 30px);
-      z-index: 2147483647;
-      background: white;
-      display: none;
-      padding: 10px;
-      box-shadow: 0 0 0 1px rgba(0, 0, 0, .2);
-      border-radius: 4px;
-      min-width: 50px;
+			position: fixed;
+			right: 4px;
+			bottom: calc(4px + 30px);
+			z-index: 2147483647;
+			background: white;
+			display: none;
+			padding: 10px;
+			box-shadow: 0 0 0 1px rgba(0, 0, 0, .2);
+			border-radius: 4px;
+			min-width: 50px;
 			max-height: calc(100vh - 64px);
 			overflow-y: auto;
-      width: 300px;
-    `;
+			width: 300px;
+		`;
 
 		list.innerHTML = `<div>
-      <!-- Tab Navigation -->
-      <div style="display: flex; margin-block: -5px .75em; margin-inline: -10px; padding: 0 10px; gap: .25em; border-bottom: 1px solid #ddd;">
-        <button id="tab-dulunche" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">独轮车</button>
-        <button id="tab-fasong" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">常规发送</button>
-        <button id="tab-settings" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">全局设置</button>
-      </div>
+			<!-- Tab Navigation -->
+			<div style="display: flex; margin-block: -5px .75em; margin-inline: -10px; padding: 0 10px; gap: .25em; border-bottom: 1px solid #ddd;">
+				<button id="tab-dulunche" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">独轮车</button>
+				<button id="tab-fasong" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">常规发送</button>
+				<button id="tab-settings" class="tab-btn" style="padding: .25em .75em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">全局设置</button>
+			</div>
 
-      <!-- Tab Content: 独轮车 -->
-      <div id="content-dulunche" class="tab-content" style="display: none;">
-        <div style="margin: .5em 0; display: flex; align-items: center; flex-wrap: wrap; gap: .25em;">
-          <button id="sendBtn">开启独轮车</button>
-          <select id="templateSelect" style="width: 16ch;"></select>
-          <button id="addTemplateBtn">新增</button>
-          <button id="removeTemplateBtn">删除当前</button>
-        </div>
-        <textarea id="msgList" placeholder="在这输入弹幕，每行一句话，超过可发送字数的会自动进行分割" style="box-sizing: border-box; height: 100px; width: 100%; resize: vertical;"></textarea>
-        <div style="margin: .5em 0;">
-          <span id="msgCount"></span><span>间隔</span>
-          <input id="msgSendInterval" style="width: 30px;" autocomplete="off" type="number" min="0" value="${GM_getValue("msgSendInterval")}" />
-          <span>秒，</span>
-          <span>超过</span>
-          <input id="maxLength" style="width: 30px;" autocomplete="off" type="number" min="1" value="${GM_getValue("maxLength")}" />
-          <span>字自动分段，</span>
-          <span style="display: inline-flex; align-items: center; gap: .25em;">
-            <input id="randomColor" type="checkbox" ${GM_getValue("randomColor") ? "checked" : ""} />
-            <label for="randomColor">随机颜色</label>
-          </span>
-          <span style="display: inline-flex; align-items: center; gap: .25em;">
-            <input id="randomInterval" type="checkbox" ${GM_getValue("randomInterval") ? "checked" : ""} />
-            <label for="randomInterval">间隔增加随机性</label>
-          </span>
-          <span style="display: inline-flex; align-items: center; gap: .25em;">
-            <input id="randomChar" type="checkbox" ${GM_getValue("randomChar") ? "checked" : ""} />
-            <label for="randomChar">随机字符</label>
-          </span>
-        </div>
-      </div>
+			<!-- Tab Content: 独轮车 -->
+			<div id="content-dulunche" class="tab-content" style="display: none;">
+				<div style="margin: .5em 0; display: flex; align-items: center; flex-wrap: wrap; gap: .25em;">
+					<button id="sendBtn">开启独轮车</button>
+					<select id="templateSelect" style="width: 16ch;"></select>
+					<button id="addTemplateBtn">新增</button>
+					<button id="removeTemplateBtn">删除当前</button>
+				</div>
+				<textarea id="msgList" placeholder="在这输入弹幕，每行一句话，超过可发送字数的会自动进行分割" style="box-sizing: border-box; height: 100px; width: 100%; resize: vertical;"></textarea>
+				<div style="margin: .5em 0;">
+					<span id="msgCount"></span><span>间隔</span>
+					<input id="msgSendInterval" style="width: 30px;" autocomplete="off" type="number" min="0" value="${GM_getValue("msgSendInterval")}" />
+					<span>秒，</span>
+					<span>超过</span>
+					<input id="maxLength" style="width: 30px;" autocomplete="off" type="number" min="1" value="${GM_getValue("maxLength")}" />
+					<span>字自动分段，</span>
+					<span style="display: inline-flex; align-items: center; gap: .25em;">
+						<input id="randomColor" type="checkbox" ${GM_getValue("randomColor") ? "checked" : ""} />
+						<label for="randomColor">随机颜色</label>
+					</span>
+					<span style="display: inline-flex; align-items: center; gap: .25em;">
+						<input id="randomInterval" type="checkbox" ${GM_getValue("randomInterval") ? "checked" : ""} />
+						<label for="randomInterval">间隔增加随机性</label>
+					</span>
+					<span style="display: inline-flex; align-items: center; gap: .25em;">
+						<input id="randomChar" type="checkbox" ${GM_getValue("randomChar") ? "checked" : ""} />
+						<label for="randomChar">随机字符</label>
+					</span>
+				</div>
+			</div>
 
-      <!-- Tab Content: 发送 -->
-      <div id="content-fasong" class="tab-content" style="display: none;">
-        <div style="margin: .5em 0;">
-          <textarea id="fasongInput" placeholder="输入弹幕内容… (Enter 发送)" style="box-sizing: border-box; height: 50px; width: 100%; resize: vertical;"></textarea>
-        </div>
-      </div>
+			<!-- Tab Content: 发送 -->
+			<div id="content-fasong" class="tab-content" style="display: none;">
+				<div style="margin: .5em 0;">
+					<textarea id="fasongInput" placeholder="输入弹幕内容… (Enter 发送)" style="box-sizing: border-box; height: 50px; width: 100%; resize: vertical;"></textarea>
+				</div>
+			</div>
 
-      <!-- Tab Content: 全局设置 -->
-      <div id="content-settings" class="tab-content" style="display: none;">
-        <div style="margin: .5em 0;">
-          <div style="font-weight: bold; margin-bottom: .5em;">文本替换规则</div>
-          <div style="margin-block: .5em; color: #666;">适用于独轮车和常规发送，越靠后的优先级越高</div>
-          <div id="replacementRulesList" style="margin-bottom: .5em; max-height: 150px; overflow-y: auto;"></div>
-          <div style="display: flex; gap: .25em; align-items: center; flex-wrap: wrap;">
-            <input id="replaceFrom" placeholder="替换前" style="flex: 1; min-width: 80px;" />
-            <span>→</span>
-            <input id="replaceTo" placeholder="替换后" style="flex: 1; min-width: 80px;" />
-            <button id="addRuleBtn" style="padding: .25em .5em;">添加</button>
-          </div>
-        </div>
-      </div>
+			<!-- Tab Content: 全局设置 -->
+			<div id="content-settings" class="tab-content" style="display: none;">
+				<!-- Remote Keyword Sync -->
+				<div style="margin: .5em 0; padding-bottom: .5em; border-bottom: 1px solid #eee;">
+					<div style="font-weight: bold; margin-bottom: .5em;">
+						云端规则替换
+						<a href="https://github.com/laplace-live/public/blob/master/artifacts/livesrtream-keywords.json" target="_blank" style="color: #288bb8; text-decoration: none;">我要贡献规则</a>
+					</div>
+					<div style="margin-block: .5em; color: #666;">
+						自动同步预定义关键词替换规则（每30分钟）
+					</div>
+					<div style="display: flex; gap: .5em; align-items: center; flex-wrap: wrap; margin-bottom: .5em;">
+						<button id="syncRemoteBtn" style="padding: .25em .75em;">同步</button>
+						<span id="remoteKeywordsStatus" style="color: #666;">未同步</span>
+					</div>
+					<div id="remoteKeywordsInfo" style="color: #666;"></div>
+				</div>
 
-      <!-- Global Log Area -->
-      <details style="margin-top: .25em;">
-        <summary style="cursor: pointer; user-select: none; font-weight: bold;">日志</summary>
-        <textarea id="msgLogs" style="box-sizing: border-box; height: 80px; width: 100%; resize: none; margin-top: .5em;" placeholder="此处将输出日志（最多保留 ${GM_getValue("maxLogLines")} 条）" readonly></textarea>
-      </details>
-      </div>`;
+				<!-- Local Replacement Rules -->
+				<div style="margin: .5em 0;">
+					<div style="font-weight: bold; margin-bottom: .5em;">本地规则替换</div>
+					<div style="margin-block: .5em; color: #666;">规则从上至下执行；本地规则总是最后执行</div>
+					<div id="replacementRulesList" style="margin-bottom: .5em; max-height: 160px; overflow-y: auto;"></div>
+					<div style="display: flex; gap: .25em; align-items: center; flex-wrap: wrap;">
+						<input id="replaceFrom" placeholder="替换前" style="flex: 1; min-width: 80px;" />
+						<span>→</span>
+						<input id="replaceTo" placeholder="替换后" style="flex: 1; min-width: 80px;" />
+						<button id="addRuleBtn" style="padding: .25em .5em;">添加</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Global Log Area -->
+			<details style="margin-top: .25em;">
+				<summary style="cursor: pointer; user-select: none; font-weight: bold;">日志</summary>
+				<textarea id="msgLogs" style="box-sizing: border-box; height: 80px; width: 100%; resize: none; margin-top: .5em;" placeholder="此处将输出日志（最多保留 ${GM_getValue("maxLogLines")} 条）" readonly></textarea>
+			</details>
+			</div>`;
 
 		document.body.appendChild(list);
 
@@ -503,6 +526,7 @@ let cachedRoomId = null;
 					const index = parseInt(e.target.getAttribute("data-index"), 10);
 					replacementRules.splice(index, 1);
 					GM_setValue("replacementRules", replacementRules);
+					buildReplacementMap(); // Rebuild map when rules change
 					updateReplacementRulesDisplay();
 				});
 			});
@@ -520,6 +544,7 @@ let cachedRoomId = null;
 
 			replacementRules.push({ from, to });
 			GM_setValue("replacementRules", replacementRules);
+			buildReplacementMap(); // Rebuild map when rules change
 
 			replaceFromInput.value = "";
 			replaceToInput.value = "";
@@ -620,24 +645,195 @@ let cachedRoomId = null;
 		// Initialize replacement rules display
 		updateReplacementRulesDisplay();
 
+		// ===== Remote Keywords Sync =====
+
+		const REMOTE_KEYWORDS_URL = "https://raw.githubusercontent.com/laplace-live/public/refs/heads/master/artifacts/livesrtream-keywords.json";
+		const SYNC_INTERVAL = 15 * 60 * 1000; // 15 minutes in milliseconds
+
+		/** @type {HTMLButtonElement} */
+		const syncRemoteBtn = document.getElementById("syncRemoteBtn");
+		/** @type {HTMLSpanElement} */
+		const remoteKeywordsStatus = document.getElementById("remoteKeywordsStatus");
+		/** @type {HTMLDivElement} */
+		const remoteKeywordsInfo = document.getElementById("remoteKeywordsInfo");
+
+		/**
+		 * Fetches remote keywords from GitHub
+		 * @returns {Promise<{global: {keywords: Object}, rooms: Array}>}
+		 */
+		async function fetchRemoteKeywords() {
+			const response = await fetch(REMOTE_KEYWORDS_URL);
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
+			return await response.json();
+		}
+
+		/**
+		 * Syncs remote keywords and stores them locally
+		 * @returns {Promise<void>}
+		 */
+		async function syncRemoteKeywords() {
+			try {
+				syncRemoteBtn.disabled = true;
+				syncRemoteBtn.textContent = "同步中…";
+				remoteKeywordsStatus.textContent = "正在同步…";
+				remoteKeywordsStatus.style.color = "#666";
+
+				const data = await fetchRemoteKeywords();
+
+				// Store the fetched data
+				GM_setValue("remoteKeywords", data);
+				GM_setValue("remoteKeywordsLastSync", Date.now());
+				buildReplacementMap(); // Rebuild map when remote keywords change
+
+				// Update status
+				updateRemoteKeywordsStatus();
+
+				appendToLimitedLog(msgLogs, "✅ 云端替换规则同步成功", maxLogLines);
+			} catch (error) {
+				remoteKeywordsStatus.textContent = `同步失败: ${error.message}`;
+				remoteKeywordsStatus.style.color = "#f44";
+				appendToLimitedLog(msgLogs, `❌ 云端替换规则同步失败: ${error.message}`, maxLogLines);
+			} finally {
+				syncRemoteBtn.disabled = false;
+				syncRemoteBtn.textContent = "同步";
+			}
+		}
+
+		/**
+		 * Updates the display of remote keywords status
+		 * @returns {void}
+		 */
+		function updateRemoteKeywordsStatus() {
+			const remoteKeywords = GM_getValue("remoteKeywords", null);
+			const lastSync = GM_getValue("remoteKeywordsLastSync", null);
+
+			if (!remoteKeywords || !lastSync) {
+				remoteKeywordsStatus.textContent = "未同步";
+				remoteKeywordsStatus.style.color = "#666";
+				remoteKeywordsInfo.textContent = "";
+				return;
+			}
+
+			// Get current room ID
+			const currentRoomId = cachedRoomId;
+
+			// Count keywords
+			const globalCount = Object.keys(remoteKeywords.global?.keywords || {}).length;
+			let roomCount = 0;
+
+			if (currentRoomId) {
+				const roomData = remoteKeywords.rooms?.find(r => r.room === currentRoomId);
+				roomCount = Object.keys(roomData?.keywords || {}).length;
+			}
+
+			const totalApplied = globalCount + roomCount;
+
+			// Format last sync time
+			const syncDate = new Date(lastSync);
+			const timeStr = syncDate.toLocaleString('zh-CN', {
+				month: '2-digit',
+				day: '2-digit',
+				hour: '2-digit',
+				minute: '2-digit'
+			});
+
+			remoteKeywordsStatus.textContent = `最后同步: ${timeStr}`;
+			remoteKeywordsStatus.style.color = "#36a185";
+			remoteKeywordsInfo.textContent = `当前房间应用 ${totalApplied} 条规则（全局 ${globalCount} + 房间 ${roomCount}）`;
+		}
+
+		// Manual sync button
+		syncRemoteBtn.addEventListener("click", () => {
+			syncRemoteKeywords();
+		});
+
+		// Set the callback for when room ID is ready
+		onRoomIdReadyCallback = updateRemoteKeywordsStatus;
+
+		// Auto-sync on load
+		(async () => {
+			const lastSync = GM_getValue("remoteKeywordsLastSync", null);
+			const now = Date.now();
+
+			// Sync if never synced or last sync was more than 30 minutes ago
+			if (!lastSync || (now - lastSync) > SYNC_INTERVAL) {
+				await syncRemoteKeywords();
+			} else {
+				updateRemoteKeywordsStatus();
+			}
+		})();
+
+		// Auto-sync every 30 minutes
+		setInterval(async () => {
+			await syncRemoteKeywords();
+		}, SYNC_INTERVAL);
+
 		loop();
 		clearInterval(check);
 	}, 100);
 })();
 
 /**
+ * Builds the replacement map from remote and local rules
+ * Priority: remote global < remote room-specific < local rules
+ * @returns {void}
+ */
+function buildReplacementMap() {
+	const map = new Map();
+
+	// Add remote keywords
+	const remoteKeywords = GM_getValue("remoteKeywords", null);
+	if (remoteKeywords) {
+		// Add global keywords first
+		const globalKeywords = remoteKeywords.global?.keywords || {};
+		for (const [from, to] of Object.entries(globalKeywords)) {
+			if (from) {
+				map.set(from, to);
+			}
+		}
+
+		// Add room-specific keywords (override global if same key)
+		if (cachedRoomId) {
+			const roomData = remoteKeywords.rooms?.find(r => r.room === cachedRoomId);
+			const roomKeywords = roomData?.keywords || {};
+			for (const [from, to] of Object.entries(roomKeywords)) {
+				if (from) {
+					map.set(from, to);
+				}
+			}
+		}
+	}
+
+	// Add local rules (override remote if same key)
+	const localRules = GM_getValue("replacementRules", []);
+	for (const rule of localRules) {
+		if (rule.from) {
+			map.set(rule.from, rule.to);
+		}
+	}
+
+	replacementMap = map;
+}
+
+/**
  * Applies all replacement rules to the given text
+ * Uses cached replacement map for efficiency
  * @param {string} text - The text to apply replacements to
  * @returns {string} The text with all replacements applied
  */
 function applyReplacements(text) {
-	const replacementRules = GM_getValue("replacementRules", []);
-	let result = text;
-	for (const rule of replacementRules) {
-		if (rule.from) {
-			result = result.split(rule.from).join(rule.to);
-		}
+	// Build map on first use
+	if (replacementMap === null) {
+		buildReplacementMap();
 	}
+
+	let result = text;
+	for (const [from, to] of replacementMap.entries()) {
+		result = result.split(from).join(to);
+	}
+
 	return result;
 }
 
@@ -745,6 +941,11 @@ async function loop() {
 	// Fetch and cache room ID on first call
 	if (cachedRoomId === null) {
 		cachedRoomId = await getRoomId();
+		buildReplacementMap(); // Rebuild map with room-specific keywords
+		// Update remote keywords status now that we have the room ID
+		if (onRoomIdReadyCallback) {
+			onRoomIdReadyCallback();
+		}
 	}
 	const roomId = cachedRoomId;
 	const csrfToken = getCsrfToken();
