@@ -43,7 +43,7 @@ function getGraphemes(str) {
 }
 
 /**
- * Splits text into parts based on maximum grapheme length
+ * Emoji-safe splitting text into parts based on maximum grapheme length
  * @param {string} text - The text to split
  * @param {number} maxLength - Maximum number of graphemes per part
  * @returns {string[]} An array of text parts, each within the maxLength
@@ -185,7 +185,7 @@ function processMessages(text, maxLength, addRandomChar = false) {
       <div style="font-weight: bold;">独轮车 LAPLACE ver.</div>
       <div style="margin: .5em 0; display: flex; align-items: center; flex-wrap: wrap; gap: .25em;">
         <button id="sendBtn">开启独轮车</button>
-        <select id="templateSelect"></select>
+        <select id="templateSelect" style="width: 16ch;"></select>
         <button id="addTemplateBtn">新增</button>
         <button id="removeTemplateBtn">删除当前</button>
       </div>
@@ -291,10 +291,19 @@ function processMessages(text, maxLength, addRandomChar = false) {
 		 */
 		function updateTemplateSelect() {
 			templateSelect.innerHTML = "";
-			MsgTemplates.forEach((_template, index) => {
+			MsgTemplates.forEach((template, index) => {
 				const option = document.createElement("option");
 				option.value = index;
-				option.textContent = `模板 ${index + 1}`;
+
+				// Get first line of template and truncate to 20 characters
+				const firstLine = template.split("\n")[0].trim();
+				const preview = firstLine
+					? getGraphemes(firstLine).length > 10
+						? `${trimText(firstLine, 10)[0]}...`
+						: firstLine
+					: "(空)";
+
+				option.textContent = `${index + 1}: ${preview}`;
 				templateSelect.appendChild(option);
 			});
 			templateSelect.value = activeTemplateIndex;
@@ -329,6 +338,7 @@ function processMessages(text, maxLength, addRandomChar = false) {
 
 		msgInput.addEventListener("input", () => {
 			updateMessages();
+			updateTemplateSelect();
 		});
 
 		msgIntervalInput.addEventListener("input", () => {
