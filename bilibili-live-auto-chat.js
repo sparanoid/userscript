@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         bilibili 直播间独轮车 LAPLACE ver.
+// @name         LAPLACE Chatterbox 弹幕助手 - 哔哩哔哩直播间独轮车、弹幕发送
 // @namespace    https://greasyfork.org/users/9967
 // @version      1.2.7
 // @description  这是 bilibili 直播间简易版独轮车，基于 quiet/thusiant cmd 版本 https://greasyfork.org/scripts/421507 继续维护而来
@@ -150,7 +150,7 @@ function processMessages(text, maxLength, addRandomChar = false) {
 		/** @type {HTMLDivElement} */
 		const toggleBtn = document.createElement("div");
 		toggleBtn.id = "toggleBtn";
-		toggleBtn.textContent = "独轮车面版";
+		toggleBtn.textContent = "弹幕助手";
 		toggleBtn.style.cssText = `
       position: fixed;
       right: 14px;
@@ -174,7 +174,7 @@ function processMessages(text, maxLength, addRandomChar = false) {
       z-index: 2147483647;
       background: white;
       display: none;
-      padding: 14px;
+      padding: 10px;
       box-shadow: 0 0 0 1px rgba(0, 0, 0, .2);
       border-radius: 4px;
       min-width: 50px;
@@ -183,40 +183,110 @@ function processMessages(text, maxLength, addRandomChar = false) {
 
 		list.innerHTML = `<div>
       <div style="font-weight: bold;">独轮车 LAPLACE ver.</div>
-      <div style="margin: .5em 0; display: flex; align-items: center; flex-wrap: wrap; gap: .25em;">
-        <button id="sendBtn">开启独轮车</button>
-        <select id="templateSelect" style="width: 16ch;"></select>
-        <button id="addTemplateBtn">新增</button>
-        <button id="removeTemplateBtn">删除当前</button>
+
+      <!-- Tab Navigation -->
+      <div style="display: flex; margin: .5em -10px; padding: 0 10px; gap: .25em; border-bottom: 1px solid #ddd;">
+        <button id="tab-dulunche" class="tab-btn" style="padding: .25em 1em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">独轮车</button>
+        <button id="tab-fasong" class="tab-btn" style="padding: .25em 1em; margin-bottom: -1px; border: none; background: none; cursor: pointer; border-bottom: 1px solid transparent;">发送</button>
       </div>
-      <textarea id="msgList" placeholder="在这输入弹幕，每行一句话，超过可发送字数的会自动进行分割" style="height: 100px; width: 100%; resize: none;"></textarea>
-      <div style="margin: .5em 0;">
-        <span id="msgCount"></span><span>间隔</span>
-        <input id="msgSendInterval" style="width: 30px;" autocomplete="off" type="number" min="0" value="${GM_getValue("msgSendInterval")}" />
-        <span>秒，</span>
-        <span>超过</span>
-        <input id="maxLength" style="width: 30px;" autocomplete="off" type="number" min="1" value="${GM_getValue("maxLength")}" />
-        <span>字自动分段，</span>
-        <span style="display: inline-flex; align-items: center; gap: .25em;">
-          <input id="randomColor" type="checkbox" ${GM_getValue("randomColor") ? "checked" : ""} />
-          <label for="randomColor">随机颜色</label>
-        </span>
-        <span style="display: inline-flex; align-items: center; gap: .25em;">
-          <input id="randomInterval" type="checkbox" ${GM_getValue("randomInterval") ? "checked" : ""} />
-          <label for="randomInterval">间隔增加随机性</label>
-        </span>
-        <span style="display: inline-flex; align-items: center; gap: .25em;">
-          <input id="randomChar" type="checkbox" ${GM_getValue("randomChar") ? "checked" : ""} />
-          <label for="randomChar">随机字符</label>
-        </span>
+
+      <!-- Tab Content: 独轮车 -->
+      <div id="content-dulunche" class="tab-content" style="display: none;">
+        <div style="margin: .5em 0; display: flex; align-items: center; flex-wrap: wrap; gap: .25em;">
+          <button id="sendBtn">开启独轮车</button>
+          <select id="templateSelect" style="width: 16ch;"></select>
+          <button id="addTemplateBtn">新增</button>
+          <button id="removeTemplateBtn">删除当前</button>
+        </div>
+        <textarea id="msgList" placeholder="在这输入弹幕，每行一句话，超过可发送字数的会自动进行分割" style="box-sizing: border-box; height: 100px; width: 100%; resize: none;"></textarea>
+        <div style="margin: .5em 0;">
+          <span id="msgCount"></span><span>间隔</span>
+          <input id="msgSendInterval" style="width: 30px;" autocomplete="off" type="number" min="0" value="${GM_getValue("msgSendInterval")}" />
+          <span>秒，</span>
+          <span>超过</span>
+          <input id="maxLength" style="width: 30px;" autocomplete="off" type="number" min="1" value="${GM_getValue("maxLength")}" />
+          <span>字自动分段，</span>
+          <span style="display: inline-flex; align-items: center; gap: .25em;">
+            <input id="randomColor" type="checkbox" ${GM_getValue("randomColor") ? "checked" : ""} />
+            <label for="randomColor">随机颜色</label>
+          </span>
+          <span style="display: inline-flex; align-items: center; gap: .25em;">
+            <input id="randomInterval" type="checkbox" ${GM_getValue("randomInterval") ? "checked" : ""} />
+            <label for="randomInterval">间隔增加随机性</label>
+          </span>
+          <span style="display: inline-flex; align-items: center; gap: .25em;">
+            <input id="randomChar" type="checkbox" ${GM_getValue("randomChar") ? "checked" : ""} />
+            <label for="randomChar">随机字符</label>
+          </span>
+        </div>
       </div>
+
+      <!-- Tab Content: 发送 -->
+      <div id="content-fasong" class="tab-content" style="display: none;">
+        <div style="padding: 2em; text-align: center; color: #999;">
+          <p>此功能正在开发中...</p>
+          <p style="margin-top: 1em;">敬请期待</p>
+        </div>
+      </div>
+
+      <!-- Global Log Area -->
       <details style="margin-top: .5em;">
         <summary style="cursor: pointer; user-select: none; font-weight: bold; padding: .25em 0;">日志</summary>
-        <textarea id="msgLogs" style="height: 80px; width: 100%; resize: none; margin-top: .5em;" placeholder="此处将输出日志（最多保留 ${GM_getValue("maxLogLines")} 条）" readonly></textarea>
+        <textarea id="msgLogs" style="box-sizing: border-box; height: 80px; width: 100%; resize: none; margin-top: .5em;" placeholder="此处将输出日志（最多保留 ${GM_getValue("maxLogLines")} 条）" readonly></textarea>
       </details>
       </div>`;
 
 		document.body.appendChild(list);
+
+		// Tab switching logic
+		/** @type {string} */
+		const activeTab = GM_getValue("activeTab", "dulunche");
+
+		/**
+		 * Switches to the specified tab and saves the state
+		 * @param {string} tabId - The tab identifier (dulunche or fasong)
+		 * @returns {void}
+		 */
+		function switchTab(tabId) {
+			// Hide all tab contents
+			document.querySelectorAll(".tab-content").forEach((content) => {
+				content.style.display = "none";
+			});
+
+			// Remove active state from all tabs
+			document.querySelectorAll(".tab-btn").forEach((btn) => {
+				btn.style.borderBottom = "1px solid transparent";
+				btn.style.fontWeight = "normal";
+			});
+
+			// Show selected tab content
+			const contentElement = document.getElementById(`content-${tabId}`);
+			if (contentElement) {
+				contentElement.style.display = "block";
+			}
+
+			// Highlight active tab button
+			const tabBtn = document.getElementById(`tab-${tabId}`);
+			if (tabBtn) {
+				tabBtn.style.borderBottom = "1px solid #36a185";
+				tabBtn.style.fontWeight = "bold";
+			}
+
+			// Save active tab
+			GM_setValue("activeTab", tabId);
+		}
+
+		// Setup tab click handlers
+		document.getElementById("tab-dulunche")?.addEventListener("click", () => {
+			switchTab("dulunche");
+		});
+
+		document.getElementById("tab-fasong")?.addEventListener("click", () => {
+			switchTab("fasong");
+		});
+
+		// Restore last active tab
+		switchTab(activeTab);
 
 		/** @type {HTMLButtonElement} */
 		const sendBtn = document.getElementById("sendBtn");
