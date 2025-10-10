@@ -11,8 +11,11 @@
 // @grant        GM_deleteValue
 // ==/UserScript==
 
+/** @type {string[]} */
 const MsgTemplates = GM_getValue("MsgTemplates", []);
+/** @type {number} */
 let activeTemplateIndex = GM_getValue("activeTemplateIndex", 0);
+/** @type {Object.<string, number|boolean>} */
 const scriptInitVal = {
 	msgSendInterval: 1,
 	maxLength: 20,
@@ -26,13 +29,25 @@ for (const initVal in scriptInitVal) {
 		GM_setValue(initVal, scriptInitVal[initVal]);
 }
 
+/** @type {boolean} */
 let sendMsg = false;
 
+/**
+ * Splits a string into grapheme clusters (user-perceived characters)
+ * @param {string} str - The string to split into graphemes
+ * @returns {string[]} An array of grapheme clusters
+ */
 function getGraphemes(str) {
 	const segmenter = new Intl.Segmenter("zh", { granularity: "grapheme" });
 	return Array.from(segmenter.segment(str), ({ segment }) => segment);
 }
 
+/**
+ * Splits text into parts based on maximum grapheme length
+ * @param {string} text - The text to split
+ * @param {number} maxLength - Maximum number of graphemes per part
+ * @returns {string[]} An array of text parts, each within the maxLength
+ */
 function trimText(text, maxLength) {
 	if (!text) return [text];
 
@@ -61,6 +76,13 @@ function trimText(text, maxLength) {
 	return parts;
 }
 
+/**
+ * Appends a message to a textarea log with a maximum line limit
+ * @param {HTMLTextAreaElement} logElement - The textarea element to append to
+ * @param {string} message - The message to append
+ * @param {number} maxLines - Maximum number of lines to keep in the log
+ * @returns {void}
+ */
 function appendToLimitedLog(logElement, message, maxLines) {
 	const lines = logElement.value.split("\n");
 	if (lines.length >= maxLines) {
@@ -72,6 +94,11 @@ function appendToLimitedLog(logElement, message, maxLines) {
 	logElement.scrollTop = logElement.scrollHeight;
 }
 
+/**
+ * Extracts the room number from a Bilibili live room URL
+ * @param {string} url - The URL to extract the room number from
+ * @returns {string|undefined} The room number, or undefined if not found
+ */
 function extractRoomNumber(url) {
 	const urlObj = new URL(url);
 	const pathSegments = urlObj.pathname
@@ -83,6 +110,11 @@ function extractRoomNumber(url) {
 	return roomNumber;
 }
 
+/**
+ * Adds a random soft hyphen character at a random position in the text
+ * @param {string} text - The text to modify
+ * @returns {string} The modified text with a random character inserted
+ */
 function addRandomCharacter(text) {
 	if (!text || text.length === 0) return text;
 
@@ -92,6 +124,13 @@ function addRandomCharacter(text) {
 	return graphemes.join("");
 }
 
+/**
+ * Processes messages by splitting lines, optionally adding random characters, and trimming to max length
+ * @param {string} text - The text containing messages (one per line)
+ * @param {number} maxLength - Maximum grapheme length per message
+ * @param {boolean} [addRandomChar=false] - Whether to add random characters to each line
+ * @returns {string[]} An array of processed message strings
+ */
 function processMessages(text, maxLength, addRandomChar = false) {
 	return text
 		.split("\n")
@@ -108,6 +147,7 @@ function processMessages(text, maxLength, addRandomChar = false) {
 
 (() => {
 	const check = setInterval(() => {
+		/** @type {HTMLDivElement} */
 		const toggleBtn = document.createElement("div");
 		toggleBtn.id = "toggleBtn";
 		toggleBtn.textContent = "独轮车面版";
@@ -125,6 +165,7 @@ function processMessages(text, maxLength, addRandomChar = false) {
     `;
 		document.body.appendChild(toggleBtn);
 
+		/** @type {HTMLDivElement} */
 		const list = document.createElement("div");
 		list.style.cssText = `
       position: fixed;
@@ -177,8 +218,11 @@ function processMessages(text, maxLength, addRandomChar = false) {
 
 		document.body.appendChild(list);
 
+		/** @type {HTMLButtonElement} */
 		const sendBtn = document.getElementById("sendBtn");
+		/** @type {HTMLTextAreaElement} */
 		const msgLogs = document.getElementById("msgLogs");
+		/** @type {number} */
 		const maxLogLines = GM_getValue("maxLogLines");
 
 		sendBtn.addEventListener("click", () => {
@@ -208,17 +252,31 @@ function processMessages(text, maxLength, addRandomChar = false) {
 			list.style.display = list.style.display === "none" ? "block" : "none";
 		});
 
+		/** @type {HTMLTextAreaElement} */
 		const msgInput = document.getElementById("msgList");
+		/** @type {HTMLSpanElement} */
 		const msgCount = document.getElementById("msgCount");
+		/** @type {HTMLInputElement} */
 		const msgIntervalInput = document.getElementById("msgSendInterval");
+		/** @type {HTMLInputElement} */
 		const maxLengthInput = document.getElementById("maxLength");
+		/** @type {HTMLInputElement} */
 		const randomColorInput = document.getElementById("randomColor");
+		/** @type {HTMLInputElement} */
 		const randomIntervalInput = document.getElementById("randomInterval");
+		/** @type {HTMLInputElement} */
 		const randomCharInput = document.getElementById("randomChar");
+		/** @type {HTMLSelectElement} */
 		const templateSelect = document.getElementById("templateSelect");
+		/** @type {HTMLButtonElement} */
 		const addTemplateBtn = document.getElementById("addTemplateBtn");
+		/** @type {HTMLButtonElement} */
 		const removeTemplateBtn = document.getElementById("removeTemplateBtn");
 
+		/**
+		 * Updates the current template with input content and refreshes message count
+		 * @returns {void}
+		 */
 		function updateMessages() {
 			const maxLength = parseInt(maxLengthInput.value, 10) || 20;
 			MsgTemplates[activeTemplateIndex] = msgInput.value;
@@ -227,6 +285,10 @@ function processMessages(text, maxLength, addRandomChar = false) {
 			msgCount.textContent = `${Msg.length || 0} 条，`;
 		}
 
+		/**
+		 * Updates the template select dropdown with current templates
+		 * @returns {void}
+		 */
 		function updateTemplateSelect() {
 			templateSelect.innerHTML = "";
 			MsgTemplates.forEach((_template, index) => {
@@ -300,9 +362,16 @@ function processMessages(text, maxLength, addRandomChar = false) {
 	}, 100);
 })();
 
+/**
+ * Main loop function that handles sending messages to Bilibili live chat
+ * Continuously checks if sendMsg is true and sends queued messages with configured intervals
+ * @returns {Promise<void>}
+ */
 async function loop() {
 	let count = 0;
+	/** @type {HTMLTextAreaElement} */
 	const msgLogs = document.getElementById("msgLogs");
+	/** @type {number} */
 	const maxLogLines = GM_getValue("maxLogLines");
 	const shortUid = extractRoomNumber(window.location.href);
 
@@ -314,8 +383,10 @@ async function loop() {
 		},
 	);
 
+	/** @type {{data: {room_id: number}}} */
 	const roomData = await room.json();
 	const roomId = roomData.data.room_id;
+	/** @type {string|undefined} */
 	const csrfToken = document.cookie
 		.split(";")
 		.map((c) => c.trim())
@@ -339,9 +410,13 @@ async function loop() {
 				continue;
 			}
 
+			/** @type {number} */
 			const msgSendInterval = GM_getValue("msgSendInterval");
+			/** @type {boolean} */
 			const enableRandomColor = GM_getValue("randomColor");
+			/** @type {boolean} */
 			const enableRandomInterval = GM_getValue("randomInterval");
+			/** @type {boolean} */
 			const enableRandomChar = GM_getValue("randomChar");
 			const Msg = processMessages(
 				currentTemplate,
@@ -409,6 +484,7 @@ async function loop() {
 							body: form,
 						});
 
+						/** @type {{message?: string}} */
 						const sendApiRes = await send.json();
 						const logMessage = sendApiRes.message
 							? `❌「${message}」，原因：${sendApiRes.message}。`
