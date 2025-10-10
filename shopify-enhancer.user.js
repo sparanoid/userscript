@@ -17,43 +17,51 @@
 // @updateURL https://update.greasyfork.org/scripts/501654/Shopify%20Enhancer.meta.js
 // ==/UserScript==
 
-(function() {
-  'use strict';
-
-  const wrapperObserver = new MutationObserver((mutationsList, observer) => {
-
+(() => {
+  const wrapperObserver = new MutationObserver((mutationsList, _observer) => {
     for (const mutation of mutationsList) {
-
-      if (mutation.type === 'childList') {
-
-        [...mutation.addedNodes].map(item => {
+      if (mutation.type === "childList") {
+        [...mutation.addedNodes].map((item) => {
           // console.log('mutation wrapper added', item);
 
           // Main wrapper
-          if (item.classList?.contains('Polaris-Page') || item?.id === 'AppFrame') {
-            console.log('Main wrapper detected', item);
+          if (
+            item.classList?.contains("Polaris-Page") ||
+            item?.id === "AppFrame"
+          ) {
+            console.log("Main wrapper detected", item);
 
             // Look for spans containing phone numbers
-            const phoneSpans = item?.querySelectorAll('span.Polaris-Text--root');
+            const phoneSpans = item?.querySelectorAll(
+              "span.Polaris-Text--root",
+            );
 
             if (phoneSpans && phoneSpans.length > 0) {
-              phoneSpans.forEach(span => {
+              phoneSpans.forEach((span) => {
                 const text = span.textContent?.trim();
 
                 // Check if text starts with +86
-                if (text && text.startsWith('+86')) {
+                if (text?.startsWith?.("+86")) {
                   // Check if we already added the link to this span
-                  if (!span.nextElementSibling || !span.nextElementSibling.classList.contains('rouzao-link')) {
+                  if (
+                    !span.nextElementSibling ||
+                    !span.nextElementSibling.classList.contains("rouzao-link")
+                  ) {
                     // Extract phone number
-                    const telStr = text.replaceAll(' ', '').replaceAll('+86', '');
+                    const telStr = text
+                      .replaceAll(" ", "")
+                      .replaceAll("+86", "");
 
                     // Create link
-                    const link = document.createElement('a');
-                    link.setAttribute('href', `https://rouzao.com/orders/list?mobile=${telStr}`);
-                    link.setAttribute('target', '_blank');
-                    link.setAttribute('class', 'rouzao-link');
-                    link.textContent = 'Search in Rouzao';
-                    link.style.marginLeft = '0.5em';
+                    const link = document.createElement("a");
+                    link.setAttribute(
+                      "href",
+                      `https://rouzao.com/orders/list?mobile=${telStr}`,
+                    );
+                    link.setAttribute("target", "_blank");
+                    link.setAttribute("class", "rouzao-link");
+                    link.textContent = "Search in Rouzao";
+                    link.style.marginLeft = "0.5em";
 
                     // Insert link after the span
                     span.parentElement.insertBefore(link, span.nextSibling);
@@ -62,10 +70,13 @@
               });
             }
           }
-        })
+        });
       }
     }
   });
-  wrapperObserver.observe(document.body, { attributes: false, childList: true, subtree: true });
-
+  wrapperObserver.observe(document.body, {
+    attributes: false,
+    childList: true,
+    subtree: true,
+  });
 })();
