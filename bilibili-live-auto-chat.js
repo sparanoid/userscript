@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         LAPLACE 弹幕助手 - 哔哩哔哩直播间独轮车、弹幕发送
 // @namespace    https://greasyfork.org/users/9967
-// @version      1.2.7
+// @version      2.0.0
 // @description  这是 bilibili 直播间简易版独轮车，基于 quiet/thusiant cmd 版本 https://greasyfork.org/scripts/421507 继续维护而来
 // @author       sparanoid
 // @license      AGPL
