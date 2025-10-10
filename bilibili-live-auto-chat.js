@@ -247,7 +247,7 @@ let replacementMap = null;
 						<a href="https://github.com/laplace-live/public/blob/master/artifacts/livesrtream-keywords.json" target="_blank" style="color: #288bb8; text-decoration: none;">我要贡献规则</a>
 					</div>
 					<div style="margin-block: .5em; color: #666;">
-						自动同步预定义关键词替换规则（每30分钟）
+						每15分钟会自动同步云端替换规则
 					</div>
 					<div style="display: flex; gap: .5em; align-items: center; flex-wrap: wrap; margin-bottom: .5em;">
 						<button id="syncRemoteBtn" style="padding: .25em .75em;">同步</button>
@@ -273,7 +273,7 @@ let replacementMap = null;
 			<!-- Global Log Area -->
 			<details style="margin-top: .25em;">
 				<summary style="cursor: pointer; user-select: none; font-weight: bold;">日志</summary>
-				<textarea id="msgLogs" style="box-sizing: border-box; height: 80px; width: 100%; resize: none; margin-top: .5em;" placeholder="此处将输出日志（最多保留 ${GM_getValue("maxLogLines")} 条）" readonly></textarea>
+				<textarea id="msgLogs" style="box-sizing: border-box; height: 80px; width: 100%; resize: vertical; margin-top: .5em;" placeholder="此处将输出日志（最多保留 ${GM_getValue("maxLogLines")} 条）" readonly></textarea>
 			</details>
 			</div>`;
 
@@ -741,7 +741,7 @@ let replacementMap = null;
 
 			remoteKeywordsStatus.textContent = `最后同步: ${timeStr}`;
 			remoteKeywordsStatus.style.color = "#36a185";
-			remoteKeywordsInfo.textContent = `当前房间应用 ${totalApplied} 条规则（全局 ${globalCount} + 房间 ${roomCount}）`;
+			remoteKeywordsInfo.textContent = `当前房间共 ${totalApplied} 条规则（全局 ${globalCount} + 当前房间 ${roomCount}）`;
 		}
 
 		// Manual sync button
