@@ -5,7 +5,7 @@
 // @description  这是 bilibili 直播间简易版独轮车，基于 quiet/thusiant cmd 版本 https://greasyfork.org/scripts/421507 继续维护而来
 // @author       laplace-live
 // @license      AGPL
-// @icon         https://www.bilibili.com/favicon.ico
+// @icon         https://laplace.live/favicon.ico
 // @match        *://live.bilibili.com/*
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -611,9 +611,9 @@ let replacementMap = null;
 					// Handle specific error codes
 					if (result.error) {
 						if (result.error.includes("f")) {
-							errorMsg = "包含全局屏蔽词 (f)";
+							errorMsg = "f - 包含全局屏蔽词";
 						} else if (result.error.includes("k")) {
-							errorMsg = "包含房间屏蔽词 (k)";
+							errorMsg = "k - 包含房间屏蔽词";
 						}
 					}
 
